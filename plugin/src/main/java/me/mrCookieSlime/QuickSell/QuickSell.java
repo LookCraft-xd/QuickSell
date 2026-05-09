@@ -50,7 +50,6 @@ public class QuickSell extends JavaPlugin {
 	public void onEnable() {
 		instance = this;
 		PluginUtils utils = new PluginUtils(this);
-		new Metrics(this, 11203);
 
 		// Setup Messages & Configs
 		utils.setupConfig();
