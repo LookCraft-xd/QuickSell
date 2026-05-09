@@ -1,4 +1,4 @@
-package me.mrCookieSlime.QuickSell;
+package me.mrCookieSlime.QuickSell.shop;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -7,7 +7,7 @@ import java.util.Map;
 
 import io.github.thebusybiscuit.cscorelib2.inventory.InvUtils;
 import io.github.thebusybiscuit.cscorelib2.item.CustomItem;
-import me.mrCookieSlime.QuickSell.interfaces.SellEvent;
+import me.mrCookieSlime.QuickSell.QuickSell;
 import me.mrCookieSlime.QuickSell.utils.Variable;
 import me.mrCookieSlime.QuickSell.utils.maths.DoubleHandler;
 import org.bukkit.Bukkit;
@@ -15,7 +15,6 @@ import org.bukkit.ChatColor;
 import org.bukkit.Material;
 import org.bukkit.Sound;
 import org.bukkit.entity.Player;
-import org.bukkit.inventory.Inventory;
 import org.bukkit.inventory.ItemStack;
 
 import me.mrCookieSlime.QuickSell.interfaces.SellEvent.Type;
@@ -152,7 +151,6 @@ public class Shop {
 	 * @param item String
 	 * @param type Type
 	 */
-	// Todo: test if function works with removed backpack support. Potential depreciated method.
 	public void sellall(Player p, String item, Type type) {
 		List<ItemStack> items = new ArrayList<ItemStack>();
 		for (int slot = 0; slot < p.getInventory().getSize(); slot++) {

@@ -1,23 +1,22 @@
 package me.mrCookieSlime.QuickSell.commands;
 
-import co.aikar.commands.BaseCommand;
-import co.aikar.commands.annotation.CommandAlias;
-import co.aikar.commands.annotation.CommandPermission;
-import co.aikar.commands.annotation.Default;
-import co.aikar.commands.annotation.Syntax;
+import dev.rollczi.litecommands.annotations.argument.Arg;
+import dev.rollczi.litecommands.annotations.command.Command;
+import dev.rollczi.litecommands.annotations.context.Context;
+import dev.rollczi.litecommands.annotations.execute.Execute;
+import dev.rollczi.litecommands.annotations.permission.Permission;
 import me.mrCookieSlime.QuickSell.QuickSell;
-import me.mrCookieSlime.QuickSell.Shop;
+import me.mrCookieSlime.QuickSell.shop.Shop;
 import org.bukkit.ChatColor;
 import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
 
-@CommandAlias("price|prices")
-@CommandPermission("quicksell.prices")
-public class PricesCommand extends BaseCommand {
+@Command(name = "price", aliases = "prices")
+@Permission("quicksell.prices")
+public class PricesCommand {
 
-    @Default
-    @Syntax("<Shop Name>")
-    public static void onDefault(CommandSender sender, String shopName) {
+    @Execute
+    public void onDefault(@Context CommandSender sender, @Arg("<Shop Name>") String shopName) {
         if (!(sender instanceof Player)) {
             sender.sendMessage(ChatColor.translateAlternateColorCodes('&', "This Command is only for Players"));
             return;

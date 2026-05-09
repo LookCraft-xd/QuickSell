@@ -1,10 +1,8 @@
-package me.mrCookieSlime.QuickSell;
+package me.mrCookieSlime.QuickSell.shop;
 
 import io.github.thebusybiscuit.cscorelib2.inventory.ChestMenu;
-import io.github.thebusybiscuit.cscorelib2.inventory.ClickAction;
-import io.github.thebusybiscuit.cscorelib2.inventory.MenuClickHandler;
 import io.github.thebusybiscuit.cscorelib2.item.CustomItem;
-import me.mrCookieSlime.QuickSell.handlers.MenuHandler;
+import me.mrCookieSlime.QuickSell.QuickSell;
 import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
 import org.bukkit.Material;
@@ -12,8 +10,6 @@ import org.bukkit.Sound;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.Inventory;
 import org.bukkit.inventory.ItemStack;
-
-import java.util.function.Consumer;
 
 public class ShopMenu {
 

@@ -5,10 +5,11 @@ subprojects {
     apply(plugin = "java-library")
 
     repositories {
+        mavenCentral()
         mavenLocal()
         maven("https://jitpack.io")
         maven("https://repo.citizensnpcs.co")
-        maven("https://repo.aikar.co/content/groups/aikar")
+        maven("https://repo.panda-lang.org/releases")
         maven("https://repo.destroystokyo.com/repository/maven-public/")
         maven("https://hub.spigotmc.org/nexus/content/repositories/snapshots/")
     }

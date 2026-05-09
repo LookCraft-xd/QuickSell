@@ -35,7 +35,7 @@ public class StringUtils {
         string = string.toLowerCase();
         StringBuilder builder = new StringBuilder();
         int i = 0;
-        for (String s: string.split("_")) {
+        for (String s : string.split("_")) {
             if (i == 0) builder.append(Character.toUpperCase(s.charAt(0)) + s.substring(1));
             else builder.append(" " + Character.toUpperCase(s.charAt(0)) + s.substring(1));
             i++;
@@ -44,21 +44,21 @@ public class StringUtils {
     }
 
     public static boolean contains(String string, String... contain) {
-        for (String s: contain) {
+        for (String s : contain) {
             if (string.contains(s)) return true;
         }
         return false;
     }
 
     public static boolean equals(String string, String... equal) {
-        for (String s: equal) {
+        for (String s : equal) {
             if (string.equals(s)) return true;
         }
         return false;
     }
 
     public static boolean endsWith(String string, String... end) {
-        for (String s: end) {
+        for (String s : end) {
             if (string.endsWith(s)) return true;
         }
         return false;

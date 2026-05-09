@@ -8,8 +8,8 @@ public class Variable {
     /**
      * Creates a new Variable Object with the specified Placeholder and string
      *
-     * @param  placeholder The String which will get replaced by the Variable
-     * @param  string The String which will replace the placeholder
+     * @param placeholder The String which will get replaced by the Variable
+     * @param string      The String which will replace the placeholder
      */
     public Variable(String placeholder, String string) {
         this.placeholder = placeholder;
@@ -19,8 +19,8 @@ public class Variable {
     /**
      * Returns the specified String with this Variable appplied to it
      *
-     * @param  string The String which this Variable will be applied to
-     * @return      The applied String
+     * @param string The String which this Variable will be applied to
+     * @return The applied String
      */
     public String apply(String string) {
         return string.replace(this.placeholder, this.string);

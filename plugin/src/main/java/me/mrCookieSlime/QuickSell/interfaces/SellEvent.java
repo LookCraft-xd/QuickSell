@@ -7,7 +7,6 @@ public interface SellEvent {
 		SELL,
 		SELLALL,
 		AUTOSELL, 
-		CITIZENS,
 		UNKNOWN;
 	}
 	

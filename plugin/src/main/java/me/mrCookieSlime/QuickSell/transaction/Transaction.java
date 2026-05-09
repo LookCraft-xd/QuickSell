@@ -1,4 +1,4 @@
-package me.mrCookieSlime.QuickSell;
+package me.mrCookieSlime.QuickSell.transaction;
 
 import me.mrCookieSlime.QuickSell.interfaces.SellEvent.Type;
 

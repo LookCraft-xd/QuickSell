@@ -1,23 +1,21 @@
 package me.mrCookieSlime.QuickSell.commands;
 
-import co.aikar.commands.BaseCommand;
-import co.aikar.commands.annotation.CommandAlias;
-import co.aikar.commands.annotation.Default;
-import co.aikar.commands.annotation.Optional;
-import co.aikar.commands.annotation.Syntax;
+import dev.rollczi.litecommands.annotations.command.Command;
+import dev.rollczi.litecommands.annotations.context.Context;
+import dev.rollczi.litecommands.annotations.execute.Execute;
+import dev.rollczi.litecommands.annotations.optional.OptionalArg;
 import me.mrCookieSlime.QuickSell.QuickSell;
-import me.mrCookieSlime.QuickSell.Shop;
-import me.mrCookieSlime.QuickSell.ShopMenu;
+import me.mrCookieSlime.QuickSell.shop.Shop;
+import me.mrCookieSlime.QuickSell.shop.ShopMenu;
 import org.bukkit.ChatColor;
 import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
 
-@CommandAlias("sell")
-public class SellCommand extends BaseCommand {
+@Command(name = "sell")
+public class SellCommand {
 
-    @Default
-    @Syntax("[Shop Name]")
-    public static void onDefault(CommandSender sender, @Optional String shopName) {
+    @Execute
+    public void onDefault(@Context CommandSender sender, @OptionalArg("[Shop Name]") String shopName) {
         if (!QuickSell.cfg.getBoolean("options.enable-commands")) {
             QuickSell.local.sendMessage(sender, "commands.disabled", false);
             return;
@@ -33,6 +31,11 @@ public class SellCommand extends BaseCommand {
             return;
         }
 
+        if (shopName == null) {
+            QuickSell.local.sendMessage(sender, "messages.no-access", false);
+            return;
+        }
+
         Shop shop = Shop.getShop(shopName);
         if (shop != null) {
             if (!shop.hasUnlocked((Player) sender)) {
@@ -40,7 +43,7 @@ public class SellCommand extends BaseCommand {
                 return;
             }
 
-            ShopMenu.openMenu((Player) sender);
+            ShopMenu.open((Player) sender, shop);
             return;
         } else {
             QuickSell.local.sendMessage(sender, "messages.unknown-shop", false);

@@ -1,19 +1,23 @@
 package me.mrCookieSlime.QuickSell.commands;
 
-import co.aikar.commands.BaseCommand;
-import co.aikar.commands.annotation.*;
+import dev.rollczi.litecommands.annotations.argument.Arg;
+import dev.rollczi.litecommands.annotations.command.Command;
+import dev.rollczi.litecommands.annotations.context.Context;
+import dev.rollczi.litecommands.annotations.execute.Execute;
+import dev.rollczi.litecommands.annotations.execute.ExecuteDefault;
+import dev.rollczi.litecommands.annotations.permission.Permission;
 import me.mrCookieSlime.QuickSell.boosters.Booster;
 import me.mrCookieSlime.QuickSell.boosters.BoosterType;
 import org.bukkit.ChatColor;
 import org.bukkit.command.CommandSender;
 
-@CommandAlias("booster")
-@CommandPermission("quicksell.booster")
-public class BoosterCommand extends BaseCommand {
+@Command(name = "booster")
+@Permission("quicksell.booster")
+public class BoosterCommand {
 
-    @Default
-    @Syntax("<Booster Type> <Player> <Multi> <Duration In Mins>")
-    public static void onDefault(CommandSender sender, String type, String player, Double multi, int duration) {
+    @Execute()
+    //@Syntax("<Booster Type> <Player> <Multi> <Duration In Mins>")
+    public void onDefault(@Context CommandSender sender, @Arg String type, @Arg String player, @Arg Double multi, @Arg int duration) {
         BoosterType boosterType = type.equalsIgnoreCase("all") ? null : BoosterType.valueOf(type.toUpperCase());
 
         if (boosterType != null) {
@@ -30,14 +34,13 @@ public class BoosterCommand extends BaseCommand {
         }
     }
 
-    @CatchUnknown
-    @HelpCommand
-    public static void help(CommandSender sender) {
+    @ExecuteDefault
+    public void help(@Context CommandSender sender) {
         sendHelpMessage(sender);
     }
 
 
-    private static void sendHelpMessage(CommandSender sender) {
+    private void sendHelpMessage(CommandSender sender) {
         sender.sendMessage(ChatColor.translateAlternateColorCodes('&', "&7\u21E8 /boosters <all/monetary/prisongems/exp/mcmmo/casino> <Player> <Multiplier> <Duration in Minutes>"));
     }
 

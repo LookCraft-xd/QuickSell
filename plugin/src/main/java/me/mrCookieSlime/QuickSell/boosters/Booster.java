@@ -11,11 +11,9 @@ import java.util.List;
 import java.util.Map;
 
 import io.github.thebusybiscuit.cscorelib2.config.Config;
-import me.mrCookieSlime.QuickSell.boosters.menu.BoosterMenu;
 import me.mrCookieSlime.QuickSell.utils.Variable;
 import me.mrCookieSlime.QuickSell.QuickSell;
 
-import me.mrCookieSlime.QuickSell.utils.chat.TellRawMessage;
 import me.mrCookieSlime.QuickSell.utils.maths.DoubleHandler;
 import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
@@ -311,13 +309,13 @@ public class Booster {
 	// todo: move into a booster manager class.
 	public static void update() {
 		Iterator<Booster> boosters = Booster.iterate();
-
-		boosters.forEachRemaining(booster -> {
+		while (boosters.hasNext()) {
+			Booster booster = boosters.next();
 			if (new Date().after(booster.getDeadLine())) {
 				boosters.remove();
 				booster.deactivate();
 			}
-		});
+		}
 	}
 
 	/**
@@ -454,14 +452,28 @@ public class Booster {
 			for (Variable v: variables) {
 				message = v.apply(message);
 			}
-			new TellRawMessage()
-			.addText(message)
-			.addClickEvent(TellRawMessage.ClickAction.RUN_COMMAND, "/boosters")
-			.addHoverEvent(TellRawMessage.HoverAction.SHOW_TEXT, BoosterMenu.getTellRawMessage(this))
-			.send(p);
+			//TODO Modernize
+//			new TellRawMessage()
+//			.addText(message)
+//			.addClickEvent(TellRawMessage.ClickAction.RUN_COMMAND, "/boosters")
+//			.addHoverEvent(TellRawMessage.HoverAction.SHOW_TEXT, BoosterMenu.getTellRawMessage(this))
+//			.send(p);
 		} catch (Exception e) {
 			e.printStackTrace();
 		}
+	}
+
+	//TODO Hover message format.
+	public static String getTellRawMessage(Booster booster) {
+		StringBuilder builder = new StringBuilder("&3" + booster.getMultiplier() + "x &b" + booster.getUniqueName() + "\n \n");
+		builder.append("&7Multiplier: &e" + booster.getMultiplier() + "x\n");
+		builder.append("&7Time Left: &e" + (booster.isInfinite() ? "Infinite" : booster.formatTime() + "m") + "\n");
+		builder.append("&7Global: " + (booster.isPrivate() ? "&4&l\u2718" : "&2&l\u2714") + "\n\n&7Contributors:\n");
+		for (Map.Entry<String, Integer> entry : booster.getContributors().entrySet()) {
+			builder.append(" &8\u21E8 " + entry.getKey() + ": &a+" + entry.getValue() + "m\n");
+		}
+
+		return ChatColor.translateAlternateColorCodes('&', builder.toString());
 	}
 	
 }

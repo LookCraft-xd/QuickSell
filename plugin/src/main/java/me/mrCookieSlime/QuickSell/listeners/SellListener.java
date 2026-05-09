@@ -2,12 +2,12 @@ package me.mrCookieSlime.QuickSell.listeners;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.stream.IntStream;
 
-import io.github.thebusybiscuit.cscorelib2.inventory.InvUtils;
 import me.mrCookieSlime.QuickSell.QuickSell;
-import me.mrCookieSlime.QuickSell.SellProfile;
-import me.mrCookieSlime.QuickSell.Shop;
-import me.mrCookieSlime.QuickSell.ShopMenu;
+import me.mrCookieSlime.QuickSell.transaction.SellProfile;
+import me.mrCookieSlime.QuickSell.shop.Shop;
+import me.mrCookieSlime.QuickSell.shop.ShopMenu;
 import me.mrCookieSlime.QuickSell.utils.Variable;
 import me.mrCookieSlime.QuickSell.utils.maths.DoubleHandler;
 import me.mrCookieSlime.QuickSell.interfaces.SellEvent.Type;
@@ -25,9 +25,14 @@ import org.bukkit.event.block.Action;
 import org.bukkit.event.block.SignChangeEvent;
 import org.bukkit.event.inventory.InventoryClickEvent;
 import org.bukkit.event.inventory.InventoryCloseEvent;
+import org.bukkit.event.inventory.InventoryType;
 import org.bukkit.event.player.PlayerInteractEvent;
 import org.bukkit.event.player.PlayerQuitEvent;
+import org.bukkit.inventory.Inventory;
 import org.bukkit.inventory.ItemStack;
+import org.bukkit.inventory.meta.Damageable;
+import org.bukkit.inventory.meta.ItemMeta;
+import org.bukkit.inventory.meta.LeatherArmorMeta;
 
 public class SellListener implements Listener {
 	
@@ -236,7 +241,7 @@ public class SellListener implements Listener {
 
 						if (item != null) {
 							if (item.getType() != Material.AIR) {
-								if (InvUtils.fits(p.getInventory(), item)) p.getInventory().addItem(item);
+								if (fits(p.getInventory(), item)) p.getInventory().addItem(item);
 								else p.getWorld().dropItemNaturally(p.getLocation(), item);
 							}
 						}
@@ -245,6 +250,126 @@ public class SellListener implements Listener {
 					p.closeInventory();
 				}
 			}
+		}
+	}
+
+	public static boolean fits(Inventory inv, ItemStack item, int... slots) {
+		if (!isItemAllowed(item.getType(), inv.getType())) {
+			return false;
+		}
+
+		if (slots.length == 0) {
+			slots = IntStream.range(0, inv.getSize()).toArray();
+		}
+
+		for (int slot : slots) {
+			ItemStack stack = inv.getItem(slot);
+
+			if (stack == null || stack.getType() == Material.AIR) {
+				return true;
+			}
+
+			if (isValidStackSize(stack, item, inv) && canStack(stack, item)) {
+				return true;
+			}
+		}
+
+		return false;
+	}
+
+	public static boolean canStack(ItemStack a, ItemStack b) {
+		if (a == null || b == null) {
+			return false;
+		}
+
+		if (a.getType() != b.getType() || a.hasItemMeta() != b.hasItemMeta()) {
+			return false;
+		}
+
+		if (a.hasItemMeta()) {
+			ItemMeta aMeta = a.getItemMeta();
+			ItemMeta bMeta = b.getItemMeta();
+
+			// Item Damage
+			if (aMeta instanceof Damageable != bMeta instanceof Damageable) {
+				return false;
+			}
+
+			if (aMeta instanceof Damageable && ((Damageable) aMeta).getDamage() != ((Damageable) bMeta).getDamage()) {
+				return false;
+			}
+
+			// Leather Armor Color
+			if (aMeta instanceof LeatherArmorMeta != bMeta instanceof LeatherArmorMeta) {
+				return false;
+			}
+
+			if (aMeta instanceof LeatherArmorMeta && !((LeatherArmorMeta) aMeta).getColor().equals(((LeatherArmorMeta) bMeta).getColor())) {
+				return false;
+			}
+
+			// Custom Model Data
+			if (aMeta.hasCustomModelData() != bMeta.hasCustomModelData()) {
+				return false;
+			}
+
+			if (aMeta.hasCustomModelData() && aMeta.getCustomModelData() != bMeta.getCustomModelData()) {
+				return false;
+			}
+
+			// Enchantments
+			if (!aMeta.getEnchants().equals(bMeta.getEnchants())) {
+				return false;
+			}
+
+			// Display Name
+			if (aMeta.hasDisplayName() != bMeta.hasDisplayName()) {
+				return false;
+			}
+
+			if (aMeta.hasDisplayName() && !aMeta.getDisplayName().equals(bMeta.getDisplayName())) {
+				return false;
+			}
+
+			// Lore
+			if (aMeta.hasLore() != bMeta.hasLore()) {
+				return false;
+			}
+
+			if (aMeta.hasLore()) {
+				List<String> aLore = aMeta.getLore();
+				List<String> bLore = bMeta.getLore();
+
+				if (aLore.size() != bLore.size()) {
+					return false;
+				}
+
+				for (int i = 0; i < aLore.size(); i++) {
+					if (!aLore.get(i).equals(bLore.get(i))) {
+						return false;
+					}
+				}
+			}
+		}
+
+		return true;
+	}
+
+	public static boolean isValidStackSize(ItemStack stack, ItemStack item, Inventory inv) {
+		int newStackSize = stack.getAmount() + item.getAmount();
+		return newStackSize <= stack.getMaxStackSize() && newStackSize <= inv.getMaxStackSize();
+	}
+
+	public static boolean isItemAllowed(Material itemType, InventoryType inventoryType) {
+		switch (inventoryType) {
+			case LECTERN:
+				// Lecterns only allow written books or writable books
+				return itemType == Material.WRITABLE_BOOK || itemType == Material.WRITTEN_BOOK;
+			case SHULKER_BOX:
+				// Shulker Boxes do not allow Shulker boxes
+				return itemType != Material.SHULKER_BOX && !itemType.name().endsWith("_SHULKER_BOX");
+			default:
+				return true;
 		}
 	}
 	

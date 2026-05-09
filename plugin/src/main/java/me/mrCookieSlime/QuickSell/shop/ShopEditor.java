@@ -1,4 +1,4 @@
-package me.mrCookieSlime.QuickSell;
+package me.mrCookieSlime.QuickSell.shop;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -8,7 +8,10 @@ import java.util.UUID;
 
 import io.github.thebusybiscuit.cscorelib2.inventory.ChestMenu;
 import io.github.thebusybiscuit.cscorelib2.item.CustomItem;
+import me.mrCookieSlime.QuickSell.QuickSell;
 import me.mrCookieSlime.QuickSell.utils.Variable;
+import me.mrCookieSlime.QuickSell.utils.helpers.input.Input;
+import me.mrCookieSlime.QuickSell.utils.helpers.input.InputType;
 import me.mrCookieSlime.QuickSell.utils.maths.DoubleHandler;
 import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
@@ -54,9 +57,9 @@ public class ShopEditor implements Listener {
 
 					QuickSell.cfg.setValue("list", list);
 					QuickSell.cfg.setValue("shops." + ChatColor.stripColor(ChatColor.translateAlternateColorCodes('&', e.getMessage())) + ".name", e.getMessage());
-					QuickSell.cfg.save();
+                        QuickSell.cfg.save();
 
-					QuickSell.local.sendMessage(e.getPlayer(), "commands.shop-created", false, new Variable("%shop%", e.getMessage()));
+                    QuickSell.local.sendMessage(e.getPlayer(), "commands.shop-created", false, new Variable("%shop%", e.getMessage()));
 
 					openEditor(e.getPlayer());
 
@@ -67,8 +70,8 @@ public class ShopEditor implements Listener {
 					Shop shop = (Shop) input.getValue();
 
 					QuickSell.cfg.setValue("shops." + shop.getID() + ".name", e.getMessage());
-					QuickSell.cfg.save();
-					quicksell.reload();
+                        QuickSell.cfg.save();
+                    quicksell.reload();
 
 					openShopEditor(e.getPlayer(), Shop.getShop(shop.getID()));
 					QuickSell.local.sendMessage(e.getPlayer(), "editor.renamed-shop", false);

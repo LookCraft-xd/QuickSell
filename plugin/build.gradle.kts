@@ -12,11 +12,10 @@ plugins {
 dependencies {
     compileOnly(libs.org.spigotmc.spigot.api)
     compileOnly(libs.com.github.milkbowl.vaultapi)
-    compileOnly(libs.net.citizensnpcs.citizens.main)
 
     compileOnly(files("../libs/PrisonUtils_v1.7.jar"))
 
-    implementation(libs.co.aikar.acf.paper)
+    implementation(libs.dev.rollczi.litecommands.bukkit)
     implementation(libs.com.github.thebusybiscuit.cs.corelib2)
 }
 
@@ -34,6 +33,7 @@ tasks {
 
     compileJava {
         options.encoding = "UTF-8"
+        options.compilerArgs.add("-parameters")
     }
 
     runServer {
@@ -61,7 +61,6 @@ tasks {
         )
         softDepend = listOf(
             "mcMMO",
-            "Citizens",
             "PrisonGems",
             "PlaceholderAPI"
         )

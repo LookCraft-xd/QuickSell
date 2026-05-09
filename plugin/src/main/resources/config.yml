@@ -1,8 +1,16 @@
 #
-# Name: QuickSell
-# Author: mrCookieSlime
-# Maintainer: Shay Punter
+# Do not modify the Config while the Server
+# is running otherwise bad things might happen!
 #
+# Name: QuickSell
+# Authors: mrCookieSlime, Shay Punter
+# Exclusive version for LookCraft.
+# Maintainer: Sliide_
+#
+
+# Do NOT change this!
+config-version: 1
+
 options:
   sell-gui-rows: 3
   locked-item: BARRIER
