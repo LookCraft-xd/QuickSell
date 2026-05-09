@@ -1,25 +1,22 @@
 package me.mrCookieSlime.QuickSell.utils;
 
-import java.io.File;
-import java.util.Arrays;
-import java.util.List;
-import java.util.function.UnaryOperator;
-import java.util.stream.Collectors;
-
 import io.github.thebusybiscuit.cscorelib2.config.Config;
-import lombok.Getter;
-import lombok.NonNull;
 import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
 import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
 import org.bukkit.plugin.Plugin;
 
+import java.io.File;
+import java.util.Arrays;
+import java.util.List;
+import java.util.function.UnaryOperator;
+import java.util.stream.Collectors;
+
 public class Localization {
 
     private File file;
 
-    @Getter
     private Config config;
 
     protected boolean allowUnicodes = true;
@@ -27,10 +24,9 @@ public class Localization {
     /**
      * Creates a new Localization Object for the specified Plugin
      *
-     * @param plugin
-     *            The Plugin this Localization is made for
+     * @param plugin The Plugin this Localization is made for
      */
-    public Localization(@NonNull Plugin plugin) {
+    public Localization(Plugin plugin) {
         this.file = new File("plugins/" + plugin.getDescription().getName().replace(" ", "_"), "messages.yml");
         this.config = new Config(file);
     }
@@ -38,12 +34,10 @@ public class Localization {
     /**
      * Creates a new Localization Object for the specified Plugin
      *
-     * @param plugin
-     *            The Plugin this Localization is made for
-     * @param name
-     *            The Name of the file you want to use
+     * @param plugin The Plugin this Localization is made for
+     * @param name   The Name of the file you want to use
      */
-    public Localization(@NonNull Plugin plugin, @NonNull String name) {
+    public Localization(Plugin plugin, String name) {
         this.file = new File("plugins/" + plugin.getDescription().getName().replace(" ", "_"), name);
         this.config = new Config(file);
     }
@@ -51,20 +45,17 @@ public class Localization {
     /**
      * Creates a new Localization Object for the specified Plugin
      *
-     * @param plugin
-     *            The Plugin this Localization is made for
-     * @param name
-     *            The Name of the file you want to use
-     * @param allowUnicodes
-     *            Whether Unicodes are allowed
+     * @param plugin        The Plugin this Localization is made for
+     * @param name          The Name of the file you want to use
+     * @param allowUnicodes Whether Unicodes are allowed
      */
-    public Localization(@NonNull Plugin plugin, @NonNull String name, boolean allowUnicodes) {
+    public Localization(Plugin plugin, String name, boolean allowUnicodes) {
         this.file = new File("plugins/" + plugin.getDescription().getName().replace(" ", "_") + "/" + name);
         this.config = new Config(file);
         this.allowUnicodes = allowUnicodes;
     }
 
-    public Localization(@NonNull File file) {
+    public Localization(File file) {
         this.file = file;
         this.config = new Config(file);
     }
@@ -76,10 +67,8 @@ public class Localization {
     /**
      * Sets the Default Message/s for the specified Key
      *
-     * @param key
-     *            The Key of those Messages
-     * @param messages
-     *            The Messages which this key will refer to by default
+     * @param key      The Key of those Messages
+     * @param messages The Messages which this key will refer to by default
      */
     public void setDefaultMessages(String key, String... messages) {
         setDefaultMessages(key, Arrays.asList(messages));
@@ -96,10 +85,8 @@ public class Localization {
     /**
      * Sets the Default Message/s for the specified Key
      *
-     * @param key
-     *            The Key of those Message
-     * @param message
-     *            The Message which this key will refer to by default
+     * @param key     The Key of those Message
+     * @param message The Message which this key will refer to by default
      * @return The message previously assigned, if none was set then the message passed.
      */
     public String setDefaultMessage(String key, String message) {
@@ -116,8 +103,7 @@ public class Localization {
     /**
      * Sets the default Message Prefix
      *
-     * @param prefix
-     *            The Prefix by default
+     * @param prefix The Prefix by default
      */
     public void setPrefix(String prefix) {
         setDefaultMessage("prefix", prefix);
@@ -126,8 +112,7 @@ public class Localization {
     /**
      * Returns the Strings referring to the specified Key
      *
-     * @param key
-     *            The Key of those Messages
+     * @param key The Key of those Messages
      * @return The List this key is referring to
      */
     public List<String> getMessages(String key) {
@@ -141,8 +126,7 @@ public class Localization {
     /**
      * Returns the Strings referring to the specified Key
      *
-     * @param key
-     *            The Key of those Messages
+     * @param key The Key of those Messages
      * @return The Array of messages this key is referring to
      */
     public String[] getMessagesArray(String key) {
@@ -157,8 +141,7 @@ public class Localization {
     /**
      * Returns the String referring to the specified Key
      *
-     * @param key
-     *            The Key of those Messages
+     * @param key The Key of those Messages
      * @return The Message this key is referring to
      */
     public String getMessage(String key) {
@@ -174,7 +157,7 @@ public class Localization {
         String prefix = addPrefix ? getPrefix() : "";
         String message = getMessage(key);
 
-        for (Variable var:vars) {
+        for (Variable var : vars) {
             message = var.apply(message);
         }
 
@@ -299,4 +282,7 @@ public class Localization {
         return builder.toString();
     }
 
+    public Config getConfig() {
+        return config;
+    }
 }

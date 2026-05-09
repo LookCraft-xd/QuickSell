@@ -5,14 +5,12 @@
 co-aikar-acf-paper = "0.5.0-SNAPSHOT"
 com-github-milkbowl-vaultapi = "1.7"
 com-github-thebusybiscuit-cs-corelib2 = "0.30.4"
-me-mrcookieslime-prisonutils = "1.7"
 net-citizensnpcs-citizens-main = "2.0.30-SNAPSHOT"
-org-spigotmc-spigot-api = "1.19-R0.1-SNAPSHOT"
+org-spigotmc-spigot-api = "1.21-R0.1-SNAPSHOT"
 
 [libraries]
 co-aikar-acf-paper = { module = "co.aikar:acf-paper", version.ref = "co-aikar-acf-paper" }
 com-github-milkbowl-vaultapi = { module = "com.github.MilkBowl:VaultAPI", version.ref = "com-github-milkbowl-vaultapi" }
 com-github-thebusybiscuit-cs-corelib2 = { module = "com.github.thebusybiscuit:CS-CoreLib2", version.ref = "com-github-thebusybiscuit-cs-corelib2" }
-me-mrcookieslime-prisonutils = { module = "me.mrCookieSlime:PrisonUtils", version.ref = "me-mrcookieslime-prisonutils" }
 net-citizensnpcs-citizens-main = { module = "net.citizensnpcs:citizens-main", version.ref = "net-citizensnpcs-citizens-main" }
 org-spigotmc-spigot-api = { module = "org.spigotmc:spigot-api", version.ref = "org-spigotmc-spigot-api" }
