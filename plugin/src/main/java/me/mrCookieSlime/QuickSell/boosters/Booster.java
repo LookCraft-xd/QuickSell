@@ -30,7 +30,7 @@ public class Booster {
 	double multiplier;
 	Date timeout;
 	Config cfg;
-	boolean silent, infinite;
+	boolean silent, infinite, extend;
 	Map<String, Integer> contributors = new HashMap<String, Integer>();
 
 	/**
@@ -61,6 +61,16 @@ public class Booster {
 		}
 		this.owner = "INTERNAL";
 		
+		active.add(this);
+	}
+
+	public Booster(BoosterType type, double multiplier, int minutes) {
+		this.type = type;
+		this.multiplier = multiplier;
+		this.silent = silent;
+		this.timeout = new Date(System.currentTimeMillis() + minutes * 60 * 1000);
+		this.owner = "INTERNAL";
+
 		active.add(this);
 	}
 
@@ -142,20 +152,21 @@ public class Booster {
 	 * Activates a booster
 	 */
 	public void activate() {
-		if (QuickSell.cfg.getBoolean("boosters.extension-mode")) {
+		if (QuickSell.cfg.getBoolean("boosters.extension-mode") && extend) {
 			for (Booster booster: active) {
-				if (!booster.getType().equals(this.type) && Double.compare(booster.getMultiplier(), getMultiplier()) != 0)
-					return;
+				if (!booster.getType().equals(this.type) && Double.compare(booster.getMultiplier(), getMultiplier()) != 0) return;
 
 				// Extend the booster
 				booster.extend(this);
 				// If it isn't silenced, send a notification that the booster has been extended.
 				if (!silent) {
 					if (this instanceof PrivateBooster && Bukkit.getPlayer(getOwner()) != null) {
+						Bukkit.broadcastMessage("Sending extended private message. ?");
 						QuickSell.local.sendMessage(Bukkit.getPlayer(getOwner()), "pbooster.extended." + type.toString(), false, new Variable("%time%", String.valueOf(this.getDuration())), new Variable("%multiplier%", String.valueOf(this.getMultiplier())));
 						return;
 					}
 
+					Bukkit.broadcastMessage("Sending extended global message. ?");
 					QuickSell.local.getMessages("booster.extended." + type.toString()).forEach(message ->
 							Bukkit.broadcastMessage(ChatColor.translateAlternateColorCodes('&', message.replace("%player%", this.getOwner()).replace("%time%", String.valueOf(this.getDuration())).replace("%multiplier%", String.valueOf(this.getMultiplier())))));
 				}
@@ -184,9 +195,12 @@ public class Booster {
 		
 		active.add(this);
 
+		Bukkit.broadcastMessage("Silent ? " + silent);
+
 		// Notifies the user/server if the booster is active and hasn't been silenced
 		if (!silent) {
 			if (this instanceof PrivateBooster && Bukkit.getPlayer(getOwner()) != null) {
+				Bukkit.broadcastMessage("Owner ? " + getOwner());
 				QuickSell.local.sendMessage(Bukkit.getPlayer(getOwner()), "pbooster.activate." + type.toString(), false, new Variable("%time%", String.valueOf(this.getDuration())), new Variable("%multiplier%", String.valueOf(this.getMultiplier())));
 				return;
 			}
@@ -203,7 +217,10 @@ public class Booster {
 	// todo: move into a booster manager class.
 	public void extend(Booster booster) {
 		addTime(booster.getDuration());
-		
+
+		Bukkit.broadcastMessage("Extending " + type.toString() + " booster.");
+		Bukkit.broadcastMessage(booster.getDuration() + " by " + booster.getOwner());
+
 		int minutes = contributors.containsKey(booster.getOwner()) ? contributors.get(booster.getOwner()): 0;
 		minutes = minutes + booster.getDuration();
 		contributors.put(booster.getOwner(), minutes);
@@ -391,6 +408,18 @@ public class Booster {
 		return silent;
 	}
 
+	public void setSilent(boolean silent) {
+		this.silent = silent;
+	}
+
+	public boolean isExtend() {
+		return extend;
+	}
+
+	public void setExtend(boolean extend) {
+		this.extend = extend;
+	}
+
 	/**
 	 * Get the boosters readable name
 	 * @return String
@@ -458,6 +487,8 @@ public class Booster {
 //			.addClickEvent(TellRawMessage.ClickAction.RUN_COMMAND, "/boosters")
 //			.addHoverEvent(TellRawMessage.HoverAction.SHOW_TEXT, BoosterMenu.getTellRawMessage(this))
 //			.send(p);
+			p.sendMessage("Should have sent old tellraw message below.");
+			p.sendMessage(ChatColor.translateAlternateColorCodes('&', message));
 		} catch (Exception e) {
 			e.printStackTrace();
 		}

@@ -1,13 +1,20 @@
 package me.mrCookieSlime.QuickSell;
 
 import dev.rollczi.litecommands.LiteCommands;
+import dev.rollczi.litecommands.argument.ArgumentKey;
 import dev.rollczi.litecommands.bukkit.LiteBukkitFactory;
 import io.github.thebusybiscuit.cscorelib2.config.Config;
 import me.mrCookieSlime.QuickSell.boosters.Booster;
+import me.mrCookieSlime.QuickSell.boosters.BoosterType;
 import me.mrCookieSlime.QuickSell.boosters.PrivateBooster;
 import me.mrCookieSlime.QuickSell.commands.*;
+import me.mrCookieSlime.QuickSell.commands.extra.BoosterPlayerArgument;
+import me.mrCookieSlime.QuickSell.commands.extra.BoosterTypeArgument;
+import me.mrCookieSlime.QuickSell.commands.extra.CommandInvalidUsage;
+import me.mrCookieSlime.QuickSell.commands.extra.CommandMissingPermissionHandler;
 import me.mrCookieSlime.QuickSell.interfaces.SellEvent;
 import me.mrCookieSlime.QuickSell.listeners.SellListener;
+import me.mrCookieSlime.QuickSell.listeners.SignSellListener;
 import me.mrCookieSlime.QuickSell.listeners.XPBoosterListener;
 import me.mrCookieSlime.QuickSell.shop.Shop;
 import me.mrCookieSlime.QuickSell.shop.ShopEditor;
@@ -91,6 +98,7 @@ public class QuickSell extends JavaPlugin {
         PluginManager pluginManager = getServer().getPluginManager();
         pluginManager.registerEvents(new XPBoosterListener(), this);
         pluginManager.registerEvents(new SellListener(), this);
+        pluginManager.registerEvents(new SignSellListener(), this);
 
         // Commands
         this.liteCommands = LiteBukkitFactory.builder("QuickSell", this)
@@ -100,9 +108,12 @@ public class QuickSell extends JavaPlugin {
                         new SellAllCommand(),
                         new BoosterCommand(),
                         new BoostersCommand(),
-                        new PBoosterCommand(),
                         new QuickSellCommand(this)
                 )
+                .argument(String.class, ArgumentKey.of("booster-type"), new BoosterTypeArgument())
+                .argument(String.class, ArgumentKey.of("booster-player"), new BoosterPlayerArgument())
+                .missingPermission(new CommandMissingPermissionHandler())
+                .invalidUsage(new CommandInvalidUsage())
                 .build();
 
         for (int i = 0; i < 1000; i++) {
