@@ -5,7 +5,6 @@ import dev.rollczi.litecommands.argument.ArgumentKey;
 import dev.rollczi.litecommands.bukkit.LiteBukkitFactory;
 import io.github.thebusybiscuit.cscorelib2.config.Config;
 import me.mrCookieSlime.QuickSell.boosters.Booster;
-import me.mrCookieSlime.QuickSell.boosters.BoosterType;
 import me.mrCookieSlime.QuickSell.boosters.PrivateBooster;
 import me.mrCookieSlime.QuickSell.commands.*;
 import me.mrCookieSlime.QuickSell.commands.extra.BoosterPlayerArgument;
@@ -16,14 +15,13 @@ import me.mrCookieSlime.QuickSell.interfaces.SellEvent;
 import me.mrCookieSlime.QuickSell.listeners.SellListener;
 import me.mrCookieSlime.QuickSell.listeners.SignSellListener;
 import me.mrCookieSlime.QuickSell.listeners.XPBoosterListener;
+import me.mrCookieSlime.QuickSell.logs.LogManager;
 import me.mrCookieSlime.QuickSell.shop.Shop;
 import me.mrCookieSlime.QuickSell.shop.ShopEditor;
-import me.mrCookieSlime.QuickSell.transaction.SellProfile;
 import me.mrCookieSlime.QuickSell.utils.Localization;
 import net.milkbowl.vault.economy.Economy;
 import org.bukkit.Material;
 import org.bukkit.command.CommandSender;
-import org.bukkit.entity.Player;
 import org.bukkit.plugin.PluginManager;
 import org.bukkit.plugin.RegisteredServiceProvider;
 import org.bukkit.plugin.java.JavaPlugin;
@@ -35,10 +33,12 @@ import java.nio.file.Paths;
 import java.text.ParseException;
 import java.util.*;
 import java.util.logging.Level;
+import java.util.logging.Logger;
 
 public class QuickSell extends JavaPlugin {
 
     private static QuickSell instance;
+    private static Logger logger;
 
     public static Config cfg;
     public static Economy economy = null;
@@ -50,9 +50,13 @@ public class QuickSell extends JavaPlugin {
 
     private LiteCommands<CommandSender> liteCommands;
 
+    private LogManager logManager;
+
     @Override
     public void onEnable() {
         instance = this;
+        logger = getLogger();
+        logManager = new LogManager(this);
 
         // Setup Messages & Configs
         cfg = new Config(this);
@@ -80,14 +84,7 @@ public class QuickSell extends JavaPlugin {
 
         // Looks and setups transaction logging
         if (cfg.getBoolean("shop.enable-logging")) {
-            registerSellEvent(new SellEvent() {
-
-                @Override
-                public void onSell(Player p, Type type, int itemsSold, double money) {
-                    SellProfile profile = SellProfile.getProfile(p);
-                    profile.storeTransaction(type, itemsSold, money);
-                }
-            });
+            registerSellEvent((p, type, itemsSold, money) -> logManager.log(p, type, itemsSold, money));
         }
 
         // Reload config files and setup economy
@@ -138,11 +135,6 @@ public class QuickSell extends JavaPlugin {
         local = null;
         events = null;
 
-        for (SellProfile profile : SellProfile.profiles.values()) {
-            profile.save();
-        }
-
-        SellProfile.profiles = null;
         Booster.active = null;
 
         if (liteCommands != null) {
@@ -201,12 +193,17 @@ public class QuickSell extends JavaPlugin {
      * @param level   Level
      * @param message Message
      */
-    public void log(Level level, String message) {
+    public static void log(Level level, String message) {
         if (level == Level.SEVERE)
-            System.err.println("[QuickSell] " + message);
+            logger.warning("[QuickSell] " + message);
 
-        if (level == Level.INFO)
-            System.out.println("[QuickSell] " + message);
+        if (level == Level.WARNING)
+            logger.warning("[QuickSell] " + message);
+
+        if (level == Level.INFO) {
+            logger.info("[QuickSell] " + message);
+        }
+
     }
 
     /**

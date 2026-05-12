@@ -7,9 +7,11 @@ import dev.rollczi.litecommands.annotations.execute.Execute;
 import dev.rollczi.litecommands.annotations.permission.Permission;
 import me.mrCookieSlime.QuickSell.QuickSell;
 import me.mrCookieSlime.QuickSell.shop.Shop;
+import me.mrCookieSlime.QuickSell.shop.ShopMenu;
 import org.bukkit.ChatColor;
 import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
+
 
 @Command(name = "price", aliases = "prices")
 @Permission("quicksell.prices")
@@ -29,18 +31,19 @@ public class PricesCommand {
                 return;
             }
 
-            shop.showPrices((Player) sender);
+            ShopMenu.openPrices(((Player) sender).getPlayer(), shop);
             return;
         } else {
             QuickSell.local.sendMessage(sender, "messages.unknown-shop", false);
         }
 
         if (QuickSell.cfg.getBoolean("options.open-only-shop-with-permission")) {
-            if (Shop.getHighestShop((Player) sender) == null) {
+            Shop highestShop = Shop.getHighestShop((Player) sender);
+            if (highestShop == null) {
                 QuickSell.local.sendMessage(sender, "messages.no-access", false);
                 return;
             }
-            Shop.getHighestShop((Player) sender).showPrices((Player) sender);
+            ShopMenu.openPrices(((Player) sender).getPlayer(), highestShop);
             return;
         }
         QuickSell.local.sendMessage(sender, "commands.prices.usage", false);

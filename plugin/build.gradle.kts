@@ -13,17 +13,27 @@ dependencies {
     compileOnly(libs.org.spigotmc.spigot.api)
     compileOnly(libs.com.github.milkbowl.vaultapi)
 
-    compileOnly(files("../libs/PrisonUtils_v1.7.jar"))
-
+    implementation(libs.dev.dejvokep.boostedyaml)
+    implementation(libs.dev.triumphteam.triumphgui)
     implementation(libs.dev.rollczi.litecommands.bukkit)
     implementation(libs.com.github.thebusybiscuit.cs.corelib2)
+
+    // Dependencias transitivas weonas.
+    configurations.all {
+        exclude(group = "com.google.code.gson", module = "gson")
+        exclude(group = "org.jetbrains", module = "annotations")
+        exclude(group = "org.intellij.lang", module = "annotations")
+    }
 }
 
 group = "me.mrCookieSlime"
 version = "2.3.5"
 description = "quicksell"
 
+
 tasks {
+
+    build { dependsOn(shadowJar) }
 
     java {
         toolchain {
@@ -40,9 +50,24 @@ tasks {
         minecraftVersion("1.21.11")
 
         downloadPlugins {
+            //hangar("PlaceholderAPI", "2.12.2")
             //modrinth("worldguard", "7.0.15")
             //modrinth("worldedit", "JUWRHdru")
         }
+    }
+
+    shadowJar {
+        relocate ("net.kyori", "me.mrCookieSlime.QuickSell.libs.kyori")
+        relocate ("dev.triumphteam", "me.mrCookieSlime.QuickSell.libs.gui")
+        relocate ("dev.rollczi", "me.mrCookieSlime.QuickSell.libs.commands")
+        relocate ("dev.dejvokep", "me.mrCookieSlime.QuickSell.libs.boostedyaml")
+
+        exclude("org/jetbrains/annotations/**")
+        exclude("org/intellij/lang/annotations/**")
+        exclude("META-INF/maven/**")
+        exclude("META-INF/versions/**")
+
+        archiveClassifier.set("")
     }
 
     bukkit {

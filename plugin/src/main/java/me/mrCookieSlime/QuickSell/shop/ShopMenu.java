@@ -1,130 +1,160 @@
 package me.mrCookieSlime.QuickSell.shop;
 
-import io.github.thebusybiscuit.cscorelib2.inventory.ChestMenu;
-import io.github.thebusybiscuit.cscorelib2.item.CustomItem;
+import dev.triumphteam.gui.builder.item.ItemBuilder;
+import dev.triumphteam.gui.guis.Gui;
+import dev.triumphteam.gui.guis.GuiItem;
+import dev.triumphteam.gui.guis.PaginatedGui;
 import me.mrCookieSlime.QuickSell.QuickSell;
-import org.bukkit.Bukkit;
-import org.bukkit.ChatColor;
+import net.kyori.adventure.text.Component;
 import org.bukkit.Material;
 import org.bukkit.Sound;
 import org.bukkit.entity.Player;
-import org.bukkit.inventory.Inventory;
 import org.bukkit.inventory.ItemStack;
 
 public class ShopMenu {
 
-	/**
-	 * Opens a shop menu for a player
-	 * @param p Player
-	 * @param shop Shop
-	 */
-	public static void open(Player p, Shop shop) {
-		if (shop.hasUnlocked(p)) {
-			Inventory inv = Bukkit.createInventory(null, 9 * QuickSell.cfg.getInt("options.sell-gui-rows"), ChatColor.translateAlternateColorCodes('&', QuickSell.local.getMessage("menu.title")));
-			if (QuickSell.cfg.getBoolean("options.enable-menu-line")) {
-				inv.setItem(9 * QuickSell.cfg.getInt("options.sell-gui-rows") - 9, new CustomItem(Material.GRAY_STAINED_GLASS_PANE, " "));
-				inv.setItem(9 * QuickSell.cfg.getInt("options.sell-gui-rows") - 8, new CustomItem(Material.LIME_STAINED_GLASS_PANE, QuickSell.local.getMessage("menu.accept")));
-				inv.setItem(9 * QuickSell.cfg.getInt("options.sell-gui-rows") - 7, new CustomItem(Material.GRAY_STAINED_GLASS_PANE, " "));
-				
-				inv.setItem(9 * QuickSell.cfg.getInt("options.sell-gui-rows") - 6, new CustomItem(Material.GRAY_STAINED_GLASS_PANE, " "));
-				inv.setItem(9 * QuickSell.cfg.getInt("options.sell-gui-rows") - 5, new CustomItem(Material.YELLOW_STAINED_GLASS_PANE, QuickSell.local.getMessage("menu.estimate")));
-				inv.setItem(9 * QuickSell.cfg.getInt("options.sell-gui-rows") - 4, new CustomItem(Material.GRAY_STAINED_GLASS_PANE, " "));
-				
-				inv.setItem(9 * QuickSell.cfg.getInt("options.sell-gui-rows") - 3, new CustomItem(Material.GRAY_STAINED_GLASS_PANE, " "));
-				inv.setItem(9 * QuickSell.cfg.getInt("options.sell-gui-rows") - 2, new CustomItem(Material.RED_STAINED_GLASS_PANE, QuickSell.local.getMessage("menu.cancel")));
-				inv.setItem(9 * QuickSell.cfg.getInt("options.sell-gui-rows") - 1, new CustomItem(Material.GRAY_STAINED_GLASS_PANE, " "));
-			}
-			p.openInventory(inv);
-			QuickSell.shop.put(p.getUniqueId(), shop);
-			return;
-		}
+    /**
+     * Opens a shop menu for a player
+     *
+     * @param p    Player
+     * @param shop Shop
+     */
+    public static void open(Player p, Shop shop) {
+        if (!shop.hasUnlocked(p)) {
+            QuickSell.local.sendMessage(p, "messages.no-access", false);
+            return;
+        }
 
-		QuickSell.local.sendMessage(p, "messages.no-access", false);
-	}
+        int rows = QuickSell.cfg.getInt("options.sell-gui-rows");
+        Gui gui = Gui.gui()
+                .title(Component.text(QuickSell.local.getMessage("menu.title")))
+                .rows(rows)
+                .create();
 
-	/**
-	 * Opens a shop menu based on the hierarchy
-	 * @param p Player
-	 */
-	public static void openMenu(Player p) {
-		if (QuickSell.cfg.getBoolean("shop.enable-hierarchy")) {
-			if (Shop.getHighestShop(p) != null) {
-				open(p, Shop.getHighestShop(p));
-				return;
-			}
-			QuickSell.local.sendMessage(p, "messages.no-access", false);
-			return;
-		}
+        // Bloqueamos que los ítems de los botones se puedan mover,
+        // pero el resto del inventario queda libre para que pongan sus cosas.
+        if (QuickSell.cfg.getBoolean("options.enable-menu-line")) {
 
-		ChestMenu menu = new ChestMenu(QuickSell.getInstance(), QuickSell.local.getMessage("menu.title"));
+            // 1. Rellenar la última fila con el cristal gris decorativo
+            // fillBottom llena los últimos 9 slots automáticamente
+            gui.getFiller().fillBottom(ItemBuilder.from(Material.GRAY_STAINED_GLASS_PANE)
+                    .name(Component.empty())
+                    .asGuiItem(e -> e.setCancelled(true)));
 
-		for (int i = 0; i < Shop.list().size(); i++) {
-			if (Shop.list().get(i) != null) {
-				final Shop shop = Shop.list().get(i);
-				menu.addItem(i, shop.getItem(shop.hasUnlocked(p) ? ShopStatus.UNLOCKED: ShopStatus.LOCKED));
-				menu.addMenuClickHandler(i, (player, i1, itemStack, itemStack1, clickAction) -> {
-					ShopMenu.open(p, shop);
-					return false;
-				});
-			}
-		}
-		menu.open(p);
+            int lastRow = rows; // Triumph usa filas de 1 a 6
 
-	}
-	
-	final static int shop_size = 45;
+            // 2. Botón Aceptar (Columna 2 de la última fila)
+            gui.setItem(lastRow, 2, ItemBuilder.from(Material.LIME_STAINED_GLASS_PANE)
+                    .name(Component.text(QuickSell.local.getMessage("menu.accept")))
+                    .asGuiItem(event -> {
+                        event.setCancelled(true);
+                        // Tu lógica de venta aquí
+                    }));
 
-	/**
-	 * Opens a GUI displaying shop items and prices to a player
-	 * @param p Player
-	 * @param shop Shop
-	 * @param page Integer
-	 */
-	public static void openPrices(Player p, final Shop shop, final int page) {
-		ChestMenu menu = new ChestMenu(QuickSell.getInstance(),"Shop Prices");
-		
-		menu.addMenuOpeningHandler(p1 -> p1.playSound(p1.getLocation(), Sound.UI_BUTTON_CLICK, 1F, 1F));
-		
-		int index = 0;
-		final int pages = shop.getPrices().getInfo().size() / shop_size + 1;
-		
-		for (int i = 45; i < 54; i++) {
-			menu.addItem(i, new CustomItem(Material.GRAY_STAINED_GLASS_PANE, " "));
-			menu.addMenuClickHandler(i, (player, i1, itemStack, itemStack1, clickAction) -> false);
-		}
-		
-		menu.addItem(46, new CustomItem(Material.LIME_STAINED_GLASS_PANE, "&r\u21E6 Previous Page", "", "&7(" + page + " / " + pages + ")"));
-		menu.addMenuClickHandler(46, (player, i, itemStack, itemStack1, clickAction) -> {
-			int next = page - 1;
-			if (next < 1) next = pages;
-			if (next != page) openPrices(p, shop, next);
-			return false;
-		});
-		
-		menu.addItem(52, new CustomItem(Material.LIME_STAINED_GLASS_PANE, "&rNext Page \u21E8", "", "&7(" + page + " / " + pages + ")"));
-		menu.addMenuClickHandler(52, (player, i, itemStack, itemStack1, clickAction) -> {
-			int next = page + 1;
-			if (next > pages) next = 1;
-			if (next != page) openPrices(p, shop, next);
-			return false;
-		});
-		
-		int shop_index = shop_size * (page - 1);
-		
-		for (int i = 0; i < shop_size; i++) {
-			int target = shop_index + i;
-			if (target >= shop.getPrices().getItems().size()) break;
-			else {
-				final String string = shop.getPrices().getItems().get(target);
-				final ItemStack item = shop.getPrices().getItem(string);
-				menu.addItem(index, item);
-				menu.addMenuClickHandler(index, (player, i12, itemStack, itemStack1, clickAction) -> false);
-				index++;
-			}
-			
-		}
-		
-		menu.open(p);
-	}
+            // 3. Botón Estimar (Columna 5 de la última fila)
+            gui.setItem(lastRow, 5, ItemBuilder.from(Material.YELLOW_STAINED_GLASS_PANE)
+                    .name(Component.text(QuickSell.local.getMessage("menu.estimate")))
+                    .asGuiItem(event -> {
+                        event.setCancelled(true);
+                        // Tu lógica de estimación aquí
+                    }));
+
+            // 4. Botón Cancelar (Columna 8 de la última fila)
+            gui.setItem(lastRow, 8, ItemBuilder.from(Material.RED_STAINED_GLASS_PANE)
+                    .name(Component.text(QuickSell.local.getMessage("menu.cancel")))
+                    .asGuiItem(event -> {
+                        event.setCancelled(true);
+                        gui.close(p);
+                    }));
+        }
+
+        gui.open(p);
+        QuickSell.shop.put(p.getUniqueId(), shop);
+    }
+
+    /**
+     * Opens a shop menu based on the hierarchy
+     *
+     * @param p Player
+     */
+    public static void openMenu(Player p) {
+        if (QuickSell.cfg.getBoolean("shop.enable-hierarchy")) {
+            Shop highest = Shop.getHighestShop(p);
+            if (highest != null) {
+                open(p, highest);
+            } else {
+                QuickSell.local.sendMessage(p, "messages.no-access", false);
+            }
+            return;
+        }
+
+        // Calculamos las filas necesarias según la cantidad de tiendas
+        int shopCount = Shop.list().size();
+        int rows = (int) Math.ceil(shopCount / 9.0);
+        if (rows == 0) rows = 1;
+
+        Gui menu = Gui.gui()
+                .title(Component.text(QuickSell.local.getMessage("menu.title")))
+                .rows(rows)
+                .create();
+
+        menu.setDefaultClickAction(event -> event.setCancelled(true));
+
+        for (Shop shop : Shop.list()) {
+            if (shop == null) continue;
+
+            boolean unlocked = shop.hasUnlocked(p);
+            ItemStack icon = shop.getItem(unlocked ? ShopStatus.UNLOCKED : ShopStatus.LOCKED);
+
+            menu.addItem(ItemBuilder.from(icon).asGuiItem(event -> {
+                // Al hacer clic, abrimos la interfaz de venta de esa tienda
+                open(p, shop);
+            }));
+        }
+
+        menu.open(p);
+    }
+
+    final static int shop_size = 45;
+
+    /**
+     * Opens a GUI displaying shop items and prices to a player
+     *
+     * @param p    Player
+     * @param shop Shop
+     */
+    public static void openPrices(Player p, final Shop shop) {
+        PaginatedGui gui = Gui.paginated()
+                .title(Component.text("Shop Prices"))
+                .rows(6)
+                .pageSize(45)
+                .create();
+
+        gui.setDefaultClickAction(event -> event.setCancelled(true));
+
+        gui.setOpenGuiAction(event -> p.playSound(p.getLocation(), Sound.UI_BUTTON_CLICK, 1F, 1F));
+
+        GuiItem filler = ItemBuilder.from(Material.GRAY_STAINED_GLASS_PANE).name(Component.empty()).asGuiItem();
+        gui.getFiller().fillBottom(filler);
+
+        // Botón Anterior
+        gui.setItem(46, ItemBuilder.from(Material.LIME_STAINED_GLASS_PANE)
+                .name(Component.text("\u21E6 Previous Page"))
+                .asGuiItem(event -> gui.previous()));
+
+        // Botón Siguiente
+        gui.setItem(52, ItemBuilder.from(Material.LIME_STAINED_GLASS_PANE)
+                .name(Component.text("Next Page \u21E8"))
+                .asGuiItem(event -> gui.next()));
+
+        for (String id : shop.getPrices().getItems()) {
+            ItemStack itemStack = shop.getPrices().getItem(id);
+            if (itemStack == null) continue;
+
+            gui.addItem(ItemBuilder.from(itemStack).asGuiItem());
+        }
+
+        gui.open(p);
+    }
 
 }

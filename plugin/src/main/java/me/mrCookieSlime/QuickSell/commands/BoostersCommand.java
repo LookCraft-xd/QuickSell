@@ -19,7 +19,7 @@ public class BoostersCommand {
 
         sender.sendMessage("Available Boosters:");
         Booster.getBoosters(sender.getName()).forEach(booster -> {
-            sender.sendMessage(ChatColor.translateAlternateColorCodes('&', (booster.isPrivate() ? "&4&lPrivado" : "&2&lGlobal") + " &3" + booster.getMultiplier() + "x &b" + booster.getUniqueName() + " &e(" + (booster.isInfinite() ? "Infinite" : booster.formatTime() + "m") + ")"));
+            sender.sendMessage(ChatColor.translateAlternateColorCodes('&', (booster.isPrivate() ? "&6&lPrivado" : "&2&lGlobal") + " &3" + booster.getMultiplier() + "x &b" + booster.getUniqueName() + " &e(" + (booster.isInfinite() ? "Infinite" : booster.formatTime() + "m") + ")"));
         });
     }
 

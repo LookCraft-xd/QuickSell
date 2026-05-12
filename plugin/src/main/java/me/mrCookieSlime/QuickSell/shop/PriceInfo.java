@@ -1,13 +1,14 @@
 package me.mrCookieSlime.QuickSell.shop;
 
-import io.github.thebusybiscuit.cscorelib2.item.CustomItem;
+import dev.triumphteam.gui.builder.item.ItemBuilder;
 import me.mrCookieSlime.QuickSell.QuickSell;
-import me.mrCookieSlime.QuickSell.utils.StringUtils;
 import me.mrCookieSlime.QuickSell.utils.maths.DoubleHandler;
+import net.kyori.adventure.text.Component;
 import org.bukkit.Material;
 import org.bukkit.inventory.ItemStack;
 
 import java.util.*;
+import java.util.logging.Level;
 
 public class PriceInfo {
 
@@ -39,27 +40,20 @@ public class PriceInfo {
 
         info = new HashMap<String, ItemStack>();
         for (String item : prices.keySet()) {
-            if (info.size() >= 54)
-                break;
 
+            // "Normal" item
             if (Material.getMaterial(item) != null) {
-                info.put(item, new CustomItem(Material.getMaterial(item), "&r" + StringUtils.formatItemName(new ItemStack(Material.getMaterial(item)), false), "", "&7Worth (1): &6" + DoubleHandler.getFancyDouble(getPrices().get(item)), "&7Worth (64): &6" + DoubleHandler.getFancyDouble(getPrices().get(item) * 64)));
+                info.put(item, ItemBuilder.from(Material.getMaterial(item))
+                        .name(Component.text(item))
+                        .addLore("&7Worth (1): &6" + DoubleHandler.getFancyDouble(prices.get(item)))
+                        .addLore("&7Worth (64): &6" + DoubleHandler.getFancyDouble(prices.get(item) * 64))
+                        .build()
+                );
                 order.add(item);
-                return;
+                continue;
             }
 
-            if (item.split("-").length > 1) {
-                if (Material.getMaterial(item.split("-")[0]) != null) {
-                    if (!item.split("-")[1].equals("nodata")) {
-                        info.put(item, new CustomItem(new CustomItem(Material.getMaterial(item.split("-")[0]), item.split("-")[1], "", "&7Worth (1): &6" + DoubleHandler.getFancyDouble(getPrices().get(item)), "&7Worth (64): &6" + DoubleHandler.getFancyDouble(getPrices().get(item) * 64)), getAmount()));
-                    } else {
-                        info.put(item, new CustomItem(Material.getMaterial(item.split("-")[0]), "&r" + StringUtils.formatItemName(new ItemStack(Material.getMaterial(item.split("-")[0])), false), "", "&7Worth (1): &6" + DoubleHandler.getFancyDouble(getPrices().get(item)), "&7Worth (64): &6" + DoubleHandler.getFancyDouble(getPrices().get(item) * 64)));
-                    }
-                    order.add(item);
-                    return;
-                }
-            }
-            System.err.println("[QuickSell] Could not recognize Item String: \"" + item + "\"");
+            QuickSell.log(Level.WARNING, "Could not recognize Item String: \" + item + \"");
         }
 
         map.put(shop.getID(), this);

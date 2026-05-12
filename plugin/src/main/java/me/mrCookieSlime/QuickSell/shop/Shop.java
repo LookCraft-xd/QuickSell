@@ -5,11 +5,12 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import dev.triumphteam.gui.builder.item.ItemBuilder;
 import io.github.thebusybiscuit.cscorelib2.inventory.InvUtils;
-import io.github.thebusybiscuit.cscorelib2.item.CustomItem;
 import me.mrCookieSlime.QuickSell.QuickSell;
 import me.mrCookieSlime.QuickSell.utils.Variable;
 import me.mrCookieSlime.QuickSell.utils.maths.DoubleHandler;
+import net.kyori.adventure.text.Component;
 import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
 import org.bukkit.Material;
@@ -38,23 +39,23 @@ public class Shop {
 		name = QuickSell.cfg.getString("shops." + shop + ".name");
 		permission = QuickSell.cfg.getString("shops." + shop + ".permission");
 		
-		List<String> lore = new ArrayList<String>();
-		lore.add("");
-		lore.add(ChatColor.translateAlternateColorCodes('&', "&7<&a&l Click to open &7>"));
+		List<Component> lore = new ArrayList<Component>();
+		lore.add(Component.empty());
+		lore.add(Component.text("&7<&a&l Click to open &7>"));
 		for (String line: QuickSell.cfg.getStringList("shops." + shop + ".lore")) {
-			lore.add(ChatColor.translateAlternateColorCodes('&', line));
+			lore.add(Component.text(line));
+		}
+
+		unlocked = ItemBuilder.from(Material.getMaterial(QuickSell.cfg.getString("shops." + shop + ".itemtype"))).name(Component.text(name)).lore(lore).build();
+
+		lore = new ArrayList<Component>();
+		lore.add(Component.text(QuickSell.local.getMessage("messages.no-access")));
+		for (String line: QuickSell.cfg.getStringList("shops." + shop + ".lore")) {
+			lore.add(Component.text(line));
 		}
 		
-		unlocked = new CustomItem(Material.getMaterial(QuickSell.cfg.getString("shops." + shop + ".itemtype")), name, lore.toArray(new String[lore.size()]));
-		
-		lore = new ArrayList<String>();
-		lore.add(ChatColor.translateAlternateColorCodes('&', QuickSell.local.getMessage("messages.no-access")));
-		for (String line: QuickSell.cfg.getStringList("shops." + shop + ".lore")) {
-			lore.add(ChatColor.translateAlternateColorCodes('&', line));
-		}
-		
-		locked = new CustomItem(Material.getMaterial(QuickSell.cfg.getString("options.locked-item")), name, lore.toArray(new String[lore.size()]));
-		
+		locked = ItemBuilder.from(Material.getMaterial(QuickSell.cfg.getString("options.locked-item"))).name(Component.text(name)).lore(lore).build();
+
 		shops.add(this);
 		map.put(this.shop.toLowerCase(), this);
 	}
@@ -188,14 +189,14 @@ public class Shop {
 		}
 
 		double money = 0.0;
-		int sold = 0;
-		int total = 0;
+		int soLDiTems = 0;
+		int totalItems = 0;
 
 		for (ItemStack item: soldItems) {
 			if (item != null) {
-				total = total + item.getAmount();
+				totalItems = totalItems + item.getAmount();
 				if (getPrices().getPrice(item) > 0.0) {
-					sold = sold + item.getAmount();
+					soLDiTems = soLDiTems + item.getAmount();
 					money = money + getPrices().getPrice(item);
 				} else if (InvUtils.fits(p.getInventory(), item)) {
 					p.getInventory().addItem(item);
@@ -208,12 +209,13 @@ public class Shop {
 		money = DoubleHandler.fixDouble(money, 2);
 
 		if (money > 0.0) {
-			double totalmoney = handoutReward(p, money, sold, silent);
+			double totalmoney = handoutReward(p, money, soLDiTems, silent);
 
 			if (!silent) {
 				if (QuickSell.cfg.getBoolean("sound.enabled"))
 					p.playSound(p.getLocation(), Sound.valueOf(QuickSell.cfg.getString("sound.sound")), 1F, 1F);
 
+				// TODO: hmmm
 				QuickSell.cfg.getStringList("commands-on-sell").forEach(command -> {
 					if (command.contains("{PLAYER}"))
 						command = command.replace("{PLAYER}", p.getName());
@@ -225,15 +227,16 @@ public class Shop {
 				});
 			}
 
-			int finalTotal = total;
+			int finalTotal = totalItems;
+			// TODO: Should have info if boosters weer used?
 			QuickSell.getSellEvents().forEach(event -> event.onSell(p, type, finalTotal, totalmoney));
 		}
 
-		if (!silent && total <= 0)  {
+		if (!silent && totalItems <= 0)  {
 			QuickSell.local.sendMessage(p, "messages.get-nothing", false);
 		}
 
-		if (!silent && sold < total && total > 0) {
+		if (!silent && soLDiTems < totalItems && totalItems > 0) {
 			QuickSell.local.sendMessage(p, "messages.dropped", false);
 		}
 
@@ -294,7 +297,7 @@ public class Shop {
 	 * @param p Player
 	 */
 	public void showPrices(Player p) {
-		ShopMenu.openPrices(p, this, 1);
+		ShopMenu.openPrices(p, this);
 	}
 	
 }

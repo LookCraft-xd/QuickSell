@@ -5,7 +5,6 @@ import me.mrCookieSlime.QuickSell.boosters.Booster;
 import me.mrCookieSlime.QuickSell.boosters.BoosterType;
 import me.mrCookieSlime.QuickSell.interfaces.SellEvent.Type;
 import me.mrCookieSlime.QuickSell.shop.Shop;
-import me.mrCookieSlime.QuickSell.transaction.SellProfile;
 import me.mrCookieSlime.QuickSell.utils.Variable;
 import me.mrCookieSlime.QuickSell.utils.maths.DoubleHandler;
 import org.bukkit.Material;
@@ -237,10 +236,5 @@ public class SellListener implements Listener {
 			default:
 				return true;
 		}
-	}
-	
-	@EventHandler
-	public void onQuit(PlayerQuitEvent e) {
-		SellProfile.getProfile(e.getPlayer()).unregister();
 	}
 }

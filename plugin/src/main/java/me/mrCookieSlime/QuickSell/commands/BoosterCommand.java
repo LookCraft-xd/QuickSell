@@ -13,52 +13,39 @@ import me.mrCookieSlime.QuickSell.boosters.PrivateBooster;
 import org.bukkit.ChatColor;
 import org.bukkit.command.CommandSender;
 
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.List;
+
 @Command(name = "booster")
 @Permission("quicksell.booster")
 public class BoosterCommand {
 
-    @Execute()
+    @Execute
     public void onDefault(@Context CommandSender sender, @Arg("booster-type") String type, @Arg("booster-player") String player, @Arg Double multi, @Arg int duration, @Flag("-s") boolean silent, @Flag("-e") boolean extend) {
-        if (type == null) {
-            handleGlobal(sender, player, multi, duration, silent, extend);
-            return;
+        List<BoosterType> types = (type == null) ? Arrays.asList(BoosterType.values()) : Collections.singletonList(BoosterType.valueOf(type));
+
+        for (BoosterType bt : types) {
+            activateBooster(bt, player, multi, duration, silent, extend);
         }
 
-        BoosterType boosterType = BoosterType.valueOf(type.toUpperCase());
+        String targetName = (player == null) ? "GLOBAL" : player;
+        String typeName = (type == null) ? "GLOBAL" : type;
+        String msg = (player == null)
+                ? "&eActivated a " + multi + "x " + typeName + " booster!"
+                : "&eGiven " + targetName + " a " + multi + "x " + typeName + " booster!";
 
-        Booster booster =
-                player != null ?
-                        new PrivateBooster(boosterType, player, multi, duration) :
-                        new Booster(boosterType, multi, duration);
+        sender.sendMessage(ChatColor.translateAlternateColorCodes('&', msg));
+    }
+
+    private void activateBooster(BoosterType type, String player, double multi, int duration, boolean silent, boolean extend) {
+        Booster booster = (player != null)
+                ? new PrivateBooster(type, player, multi, duration)
+                : new Booster(type, multi, duration);
+
         booster.setExtend(extend);
         booster.setSilent(silent);
         booster.activate();
-
-        sender.sendMessage(ChatColor.translateAlternateColorCodes('&', "&eYou have activated a " + multi + "x " + type + " booster for " + duration + " minutes!"));
-        // Private booster message.
-        //sender.sendMessage(ChatColor.translateAlternateColorCodes('&', "&eYou have given " + player + " a " + multi + "x " + boosterType + " booster for " + duration + " minutes!"));
-    }
-
-    private static void handleGlobal(CommandSender sender, String player, Double multi, int duration, boolean silent, boolean extend) {
-        for (BoosterType bt : BoosterType.values()) {
-
-            boolean target = player != null;
-            Booster booster = target ? new PrivateBooster(bt, player, multi, duration) : new Booster(bt, multi, duration);
-            booster.setExtend(extend);
-            booster.setSilent(silent);
-            booster.activate();
-            sender.sendMessage(ChatColor.translateAlternateColorCodes('&', "&eYou have activated a " + multi + "x " + bt + " booster for " + duration + " minutes!"));
-        }
-    }
-
-    @ExecuteDefault
-    public void help(@Context CommandSender sender) {
-        sendHelpMessage(sender);
-    }
-
-
-    private void sendHelpMessage(CommandSender sender) {
-        sender.sendMessage(ChatColor.translateAlternateColorCodes('&', "&7\u21E8 /boosters <all/monetary/prisongems/exp/mcmmo/casino> <Player> <Multiplier> <Duration in Minutes>"));
     }
 
 }

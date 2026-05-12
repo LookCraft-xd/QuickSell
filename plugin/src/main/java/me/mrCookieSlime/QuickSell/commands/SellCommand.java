@@ -4,12 +4,18 @@ import dev.rollczi.litecommands.annotations.command.Command;
 import dev.rollczi.litecommands.annotations.context.Context;
 import dev.rollczi.litecommands.annotations.execute.Execute;
 import dev.rollczi.litecommands.annotations.optional.OptionalArg;
+import dev.triumphteam.gui.builder.item.ItemBuilder;
+import dev.triumphteam.gui.guis.Gui;
 import me.mrCookieSlime.QuickSell.QuickSell;
 import me.mrCookieSlime.QuickSell.shop.Shop;
 import me.mrCookieSlime.QuickSell.shop.ShopMenu;
+import me.mrCookieSlime.QuickSell.shop.ShopStatus;
+import net.kyori.adventure.text.Component;
 import org.bukkit.ChatColor;
+import org.bukkit.Material;
 import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
+import org.bukkit.inventory.ItemStack;
 
 @Command(name = "sell")
 public class SellCommand {
@@ -32,7 +38,7 @@ public class SellCommand {
         }
 
         if (shopName == null) {
-            QuickSell.local.sendMessage(sender, "messages.no-access", false);
+            ShopMenu.openMenu((Player) sender);
             return;
         }
 
