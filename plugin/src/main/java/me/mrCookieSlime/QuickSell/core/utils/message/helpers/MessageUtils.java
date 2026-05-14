@@ -3,6 +3,7 @@ package me.mrCookieSlime.QuickSell.core.utils.message.helpers;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.minimessage.MiniMessage;
 import net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer;
+import org.bukkit.ChatColor;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.ArrayList;
@@ -11,9 +12,13 @@ import java.util.List;
 public class MessageUtils {
 
     // Serializadores estables
+    private static final MiniMessage MINI_MESSAGE = MiniMessage.miniMessage();
     private static final LegacyComponentSerializer LEGACY_SECTION = LegacyComponentSerializer.legacySection();
     private static final LegacyComponentSerializer LEGACY_AMPERSAND = LegacyComponentSerializer.legacyAmpersand();
-    private static final MiniMessage MINI_MESSAGE = MiniMessage.miniMessage();
+
+    public static String strip(String text) {
+        return ChatColor.stripColor(translateColor(text));
+    }
 
     /**
      * Traduce códigos '&' a color real de Minecraft (§).

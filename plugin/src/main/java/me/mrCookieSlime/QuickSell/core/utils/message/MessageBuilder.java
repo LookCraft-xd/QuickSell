@@ -1,12 +1,13 @@
 package me.mrCookieSlime.QuickSell.core.utils.message;
 
-import me.mrCookieSlime.QuickSell.core.utils.message.utils.CenteredString;
 import me.mrCookieSlime.QuickSell.core.utils.message.helpers.MessageUtils;
 import me.mrCookieSlime.QuickSell.core.utils.message.helpers.Placeholder;
+import me.mrCookieSlime.QuickSell.core.utils.message.utils.CenteredString;
 import net.kyori.adventure.text.Component;
 import org.bukkit.Bukkit;
 import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
+import org.jetbrains.annotations.NotNull;
 
 import java.util.ArrayList;
 import java.util.HashSet;
@@ -119,6 +120,10 @@ public class MessageBuilder {
         return getRawLines().stream()
                 .map(line -> handler.process(context, line, placeholders))
                 .toList();
+    }
+
+    public List<Component> asComponentList() {
+        return MessageUtils.parseToComponentList(asList());
     }
 
     private List<String> getRawLines() {

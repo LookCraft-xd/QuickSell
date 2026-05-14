@@ -6,19 +6,20 @@ import dev.triumphteam.gui.guis.PaginatedGui;
 import me.mrCookieSlime.QuickSell.QuickSell;
 import me.mrCookieSlime.QuickSell.core.utils.enums.Messages;
 import me.mrCookieSlime.QuickSell.core.utils.message.MessageHandler;
+import me.mrCookieSlime.QuickSell.core.utils.message.helpers.MessageUtils;
 import me.mrCookieSlime.QuickSell.helpers.input.Input;
 import me.mrCookieSlime.QuickSell.helpers.input.InputType;
 import me.mrCookieSlime.QuickSell.manager.ShopManager;
 import me.mrCookieSlime.QuickSell.shop.Shop;
 import me.mrCookieSlime.QuickSell.utils.DoubleHandler;
 import net.kyori.adventure.text.Component;
-import org.bukkit.ChatColor;
 import org.bukkit.Material;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.EventPriority;
 import org.bukkit.event.Listener;
 import org.bukkit.event.player.AsyncPlayerChatEvent;
+import org.bukkit.inventory.ItemFlag;
 import org.bukkit.inventory.ItemStack;
 
 import java.io.File;
@@ -53,19 +54,19 @@ public class ShopEditor implements Listener {
 
         switch (inputData.getType()) {
             case NEW_SHOP: {
-                String cleanId = ChatColor.stripColor(ChatColor.translateAlternateColorCodes('&', message)).toLowerCase();
+                String cleanId = MessageUtils.strip(message).toLowerCase();
 
                 // Crear nueva tienda física (archivo)
                 Shop newShop = new Shop(cleanId);
                 shopManager.saveShop(newShop);
 
                 messageHandler.build(p, Messages.SHOP_CREATED).placeholder("%shop%", message).send();
-                openEditor(p);
+                quicksell.getServer().getScheduler().runTask(quicksell, () -> openEditor(p));
                 break;
             }
             case RENAME: {
                 Shop shop = (Shop) inputData.getValue();
-                shop.setName(message); // Asumiendo que añadiste el setter en Shop
+                shop.setName(message);
                 shopManager.saveShop(shop);
 
                 messageHandler.build(p, Messages.EDITOR_RENAMED_SHOP).send();
@@ -86,7 +87,7 @@ public class ShopEditor implements Listener {
 
     public void openEditor(Player p) {
         Gui gui = Gui.gui()
-                .title(Component.text("&6QuickSell - Shop Editor"))
+                .title(messageHandler.build(Messages.GUI_EDITOR_TITLE).asComponent())
                 .rows(6)
                 .create();
 
@@ -94,22 +95,22 @@ public class ShopEditor implements Listener {
 
         // Usamos el manager para listar las tiendas cargadas
         for (Shop shop : shopManager.getAllShops()) {
-            gui.addItem(ItemBuilder.from(shop.getMaterial())
+            ItemBuilder itemBuilder = ItemBuilder.from(shop.getMaterial())
                     .name(Component.text(shop.getName()))
-                    .lore(Component.text("&rLeft Click: &7Edit Shop"),
-                            Component.text("&rRight Click: &7Edit Contents"),
-                            Component.text("&rShift + Right Click: &4Delete Shop"))
-                    .asGuiItem(event -> {
-                        if (event.isRightClick()) {
-                            if (event.isShiftClick()) deleteShop(p, shop);
-                            else openShopContentEditor(p, shop);
-                        } else openShopEditor(p, shop);
-                    }));
+                    .lore(messageHandler.build(Messages.GUI_EDITOR_SHOP_LORE).asComponentList())
+                    .flags(ItemFlag.HIDE_ATTRIBUTES);
+
+            gui.addItem(itemBuilder.asGuiItem(event -> {
+                if (event.isRightClick()) {
+                    if (event.isShiftClick()) deleteShop(p, shop);
+                    else openShopContentEditor(p, shop);
+                } else openShopEditor(p, shop);
+            }));
         }
 
         gui.addItem(ItemBuilder.from(Material.GOLD_NUGGET)
-                .name(Component.text("&cNew Shop"))
-                .lore(Component.text("Click: &7Create a new Shop"))
+                .name(messageHandler.build(Messages.EDITOR_CREATE_SHOP).asComponent())
+                .lore(messageHandler.build(Messages.GUI_EDITOR_NEW_SHOP_LORE).asComponentList())
                 .asGuiItem(event -> {
                     input.put(p.getUniqueId(), new Input(InputType.NEW_SHOP, null));
                     messageHandler.build(p, Messages.EDITOR_CREATE_SHOP).send();
@@ -120,39 +121,47 @@ public class ShopEditor implements Listener {
     }
 
     private void deleteShop(Player p, Shop shop) {
-        // Lógica para borrar el archivo físico
         File shopFile = new File(quicksell.getDataFolder(), "shops/" + shop.getId() + ".yml");
         if (shopFile.exists()) shopFile.delete();
 
-        //shopManager.loadShops(); // Refrescar memoria
-        p.sendMessage("&cLa tienda &f" + shop.getName() + " &cha sido eliminada.");
+        messageHandler.build(Messages.SHOP_DELETED).placeholder("%shop%", shop.getName()).send();
         openEditor(p);
     }
 
     public void openShopEditor(Player p, final Shop shop) {
-        Gui gui = Gui.gui().title(Component.text("&6Settings: " + shop.getName())).rows(3).create();
+        Gui gui = Gui.gui().title(messageHandler.build(Messages.GUI_SETTINGS_TITLE).placeholder("%shop%", shop.getName()).asComponent()).rows(3).create();
         gui.setDefaultClickAction(event -> event.setCancelled(true));
 
         // Editar Nombre
-        gui.setItem(2, 2, ItemBuilder.from(Material.NAME_TAG).name(Component.text("&eName: " + shop.getName())).asGuiItem(e -> {
-            input.put(p.getUniqueId(), new Input(InputType.RENAME, shop));
-            messageHandler.build(p, Messages.EDITOR_RENAME_SHOP).send();
-            p.closeInventory();
-        }));
+        gui.setItem(2, 2, ItemBuilder.from(Material.NAME_TAG)
+                .name(messageHandler.build(Messages.GUI_SETTINGS_NAME).placeholder("%name%", shop.getName()).asComponent())
+                .lore(messageHandler.build(Messages.GUI_SETTINGS_NAME_LORE).asComponentList())
+                .asGuiItem(e -> {
+                    input.put(p.getUniqueId(), new Input(InputType.RENAME, shop));
+                    messageHandler.build(p, Messages.EDITOR_RENAME_SHOP).send();
+                    p.closeInventory();
+                }));
 
         // Editar Item Visual
-        gui.setItem(2, 4, ItemBuilder.from(shop.getMaterial()).name(Component.text("&eDisplay Item")).addLore("&rClick: &7Set item in hand").asGuiItem(e -> {
-            ItemStack hand = p.getInventory().getItemInMainHand();
-            if (hand.getType() != Material.AIR) {
-                shop.setMaterial(hand.clone().getType());
-                shopManager.saveShop(shop);
-                openShopEditor(p, shop);
-            }
-        }));
+        gui.setItem(2, 4, ItemBuilder.from(shop.getMaterial())
+                .name(messageHandler.build(Messages.GUI_SETTINGS_ITEM).asComponent())
+                .lore(messageHandler.build(Messages.GUI_SETTINGS_ITEM_LORE).asComponentList())
+                .asGuiItem(e -> {
+                    ItemStack hand = p.getInventory().getItemInMainHand();
+                    if (hand.getType() != Material.AIR) {
+                        shop.setMaterial(hand.clone().getType());
+                        shopManager.saveShop(shop);
+                        openShopEditor(p, shop);
+                    }
+                }));
 
         // Editar Permiso
+
+        String none = messageHandler.getRawMessage("permission-none");
         gui.setItem(2, 6, ItemBuilder.from(Material.DIAMOND)
-                .name(Component.text("&7Permission: &r" + (shop.getPermission().isEmpty() ? "None" : shop.getPermission())))
+                .name(messageHandler.build(Messages.GUI_SETTINGS_PERMISSION)
+                        .placeholder("%permission%", shop.getPermission().isEmpty() ? none : shop.getPermission()).asComponent())
+                .lore(messageHandler.build(Messages.GUI_SETTINGS_PERMISSION_LORE).asComponentList())
                 .asGuiItem(e -> {
                     input.put(p.getUniqueId(), new Input(InputType.SET_PERMISSION, shop));
                     messageHandler.build(p, Messages.EDITOR_SET_PERMISSION).send();
@@ -160,14 +169,18 @@ public class ShopEditor implements Listener {
                 }));
 
         // Botón de Herencia
-        gui.setItem(2, 8, ItemBuilder.from(Material.COMMAND_BLOCK).name(Component.text("&bInheritance")).asGuiItem(e -> openShopInheritanceEditor(p, shop)));
-        gui.setItem(3, 5, ItemBuilder.from(Material.BARRIER).name(Component.text("&cBack")).asGuiItem(e -> openEditor(p)));
+        gui.setItem(2, 8, ItemBuilder.from(Material.COMMAND_BLOCK)
+                .name(messageHandler.build(Messages.GUI_SETTINGS_INHERITANCE).asComponent())
+                .asGuiItem(e -> openShopInheritanceEditor(p, shop)));
+        gui.setItem(3, 5, ItemBuilder.from(Material.BARRIER)
+                .name(messageHandler.build(Messages.GUI_SETTINGS_BACK).asComponent())
+                .asGuiItem(e -> openEditor(p)));
 
         gui.open(p);
     }
 
     public void openShopContentEditor(Player p, final Shop shop) {
-        PaginatedGui gui = Gui.paginated().title(Component.text("&6Editing: " + shop.getName())).rows(6).pageSize(45).create();
+        PaginatedGui gui = Gui.paginated().title(messageHandler.build(Messages.GUI_CONTENT_TITLE).placeholder("%shop%", shop.getName()).asComponent()).rows(6).pageSize(45).create();
         gui.setDefaultTopClickAction(event -> event.setCancelled(true));
 
         // Iterar sobre los items que tiene la tienda (usando el PriceInfo)
@@ -175,10 +188,7 @@ public class ShopEditor implements Listener {
             ItemStack stack = new ItemStack(Material.getMaterial(material));
 
             gui.addItem(ItemBuilder.from(stack)
-                    .lore(Component.text("&7Price: &6$" + DoubleHandler.getFancyDouble(price)),
-                            Component.empty(),
-                            Component.text("&rLeft Click: &7Edit Price"),
-                            Component.text("&rShift + Right Click: &cRemove"))
+                    .lore(messageHandler.build(Messages.GUI_CONTENT_EDIT_LORE).placeholder("%price%", DoubleHandler.getFancyDouble(price)).asComponentList())
                     .asGuiItem(event -> {
                         if (event.isShiftClick() && event.isRightClick()) {
                             shop.getPrices().removePrice(material);
@@ -191,42 +201,45 @@ public class ShopEditor implements Listener {
         });
 
         // Botón añadir item
-        gui.addItem(ItemBuilder.from(Material.NETHER_STAR).name(Component.text("&aAdd Item")).asGuiItem(e -> openItemEditor(p, shop)));
+        gui.addItem(ItemBuilder.from(Material.NETHER_STAR).name(messageHandler.build(Messages.GUI_CONTENT_ADD).asComponent()).asGuiItem(e -> openItemEditor(p, shop)));
 
         gui.getFiller().fillBottom(ItemBuilder.from(Material.GRAY_STAINED_GLASS_PANE).name(Component.empty()).asGuiItem());
-        gui.setItem(6, 5, ItemBuilder.from(Material.GOLD_INGOT).name(Component.text("&7⇐ Back")).asGuiItem(e -> openEditor(p)));
+        gui.setItem(6, 5, ItemBuilder.from(Material.GOLD_INGOT).name(messageHandler.build(Messages.GUI_CONTENT_BACK).asComponent())
+                .asGuiItem(e -> openEditor(p)));
 
         gui.open(p);
     }
 
     public void openPriceEditor(Player p, final Shop shop, ItemStack item, String id, double currentPrice) {
-        Gui gui = Gui.gui().title(Component.text("&6Set Price")).rows(3).create();
+        Gui gui = Gui.gui().title(messageHandler.build(Messages.GUI_PRICE_TITLE).asComponent()).rows(4).create();
         gui.setDefaultClickAction(event -> event.setCancelled(true));
 
-        gui.setItem(1, 5, ItemBuilder.from(item).lore(Component.text("&eCurrent: $" + currentPrice)).asGuiItem());
+        gui.setItem(1, 5, ItemBuilder.from(item)
+                .lore(messageHandler.build(Messages.GUI_PRICE_CURRENT).placeholder("%price%", currentPrice).asComponent()).asGuiItem());
 
         long[] values = {1, 10, 100, 1000, 10000};
-        int slot = 10;
+        int slot = 11;
         for (long val : values) {
-            gui.addItem(ItemBuilder.from(Material.GOLD_INGOT).name(Component.text("&e+/- $" + val))
+            gui.setItem(slot++, ItemBuilder.from(Material.GOLD_INGOT)
+                    .name(messageHandler.build(Messages.GUI_PRICE_ADJUST).placeholder("%value%", val).asComponent())
                     .asGuiItem(e -> {
                         double nextPrice = e.isLeftClick() ? currentPrice + val : currentPrice - val;
                         openPriceEditor(p, shop, item, id, Math.max(0.1, nextPrice));
                     }));
         }
 
-        gui.setItem(3, 3, ItemBuilder.from(Material.LIME_WOOL).name(Component.text("&aSave")).asGuiItem(e -> {
+        gui.setItem(4, 3, ItemBuilder.from(Material.LIME_WOOL).name(messageHandler.build(Messages.GUI_PRICE_SAVE).asComponent()).asGuiItem(e -> {
             shop.getPrices().setPrice(id, currentPrice);
             shopManager.saveShop(shop);
             openShopContentEditor(p, shop);
         }));
 
-        gui.setItem(3, 7, ItemBuilder.from(Material.RED_WOOL).name(Component.text("&cCancel")).asGuiItem(e -> openShopContentEditor(p, shop)));
+        gui.setItem(4, 7, ItemBuilder.from(Material.RED_WOOL).name(messageHandler.build(Messages.GUI_PRICE_CANCEL).asComponent()).asGuiItem(e -> openShopContentEditor(p, shop)));
         gui.open(p);
     }
 
     public void openShopInheritanceEditor(final Player p, final Shop s) {
-        PaginatedGui gui = Gui.paginated().title(Component.text("&6Inheritance: " + s.getName())).rows(6).pageSize(45).create();
+        PaginatedGui gui = Gui.paginated().title(messageHandler.build(Messages.GUI_INHERIT_TITLE).asComponent()).rows(6).pageSize(45).create();
         gui.setDefaultClickAction(event -> event.setCancelled(true));
 
         for (Shop otherShop : shopManager.getAllShops()) {
@@ -234,24 +247,26 @@ public class ShopEditor implements Listener {
 
             boolean inherit = s.getInheritance().contains(otherShop.getId());
 
+            String enabled = messageHandler.getRawMessage(Messages.GUI_INHERIT_ON);
+            String disabled = messageHandler.getRawMessage(Messages.GUI_INHERIT_OFF);
             gui.addItem(ItemBuilder.from(otherShop.getMaterial())
                     .name(Component.text(otherShop.getName()))
-                    .lore(Component.text("&7Inherit: " + (inherit ? "&a&l✔" : "&c&l✘")))
+                    .lore(messageHandler.build(Messages.GUI_INHERIT_STATUS).placeholder("%status%", inherit ? enabled : disabled).asComponent())
                     .asGuiItem(e -> {
                         if (inherit) s.getInheritance().remove(otherShop.getId());
                         else s.getInheritance().add(otherShop.getId());
 
                         shopManager.saveShop(s);
-                        //shopManager.loadShops(); // Esto recalcula las herencias en tiempo real
                         openShopInheritanceEditor(p, s);
                     }));
         }
 
         gui.getFiller().fillBottom(ItemBuilder.from(Material.GRAY_STAINED_GLASS_PANE).name(Component.empty()).asGuiItem());
-        gui.setItem(6, 5, ItemBuilder.from(Material.ARROW).name(Component.text("&7Back")).asGuiItem(e -> openShopEditor(p, s)));
+        gui.setItem(6, 5, ItemBuilder.from(Material.ARROW).name(messageHandler.build(Messages.GUI_CONTENT_BACK).asComponent()).asGuiItem(e -> openShopEditor(p, s)));
         gui.open(p);
     }
 
+    // TODO Change system.
     public void openItemEditor(Player p, final Shop shop) {
         Gui gui = Gui.gui()
                 .title(Component.text("&6Add Item to: " + shop.getName()))
@@ -285,7 +300,7 @@ public class ShopEditor implements Listener {
 
         // Botón para volver atrás
         gui.setItem(2, 6, ItemBuilder.from(Material.ARROW)
-                .name(Component.text("&7Go Back"))
+                .name(messageHandler.build(Messages.GUI_CONTENT_BACK).asComponent())
                 .asGuiItem(e -> openShopContentEditor(p, shop)));
 
         gui.open(p);

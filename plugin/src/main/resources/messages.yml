@@ -1,5 +1,5 @@
 # Do NOT change this!!
-config-version: 2
+config-version: 3
 
 messages:
   sell: '<green><bold>+ ${MONEY} <gray>[ <yellow>Sold <italic>{ITEMS}</italic> <yellow>Items<gray> ]'
@@ -58,6 +58,8 @@ boosters:
   reset: '<red>Reset all Boosters to 1.0x'
 
 editor:
+  item-added-success: "<green>¡Ítem añadido correctamente!"
+  no-item-in-hand: "<red>¡Debes tener un ítem en la mano para añadirlo!"
   create-shop:
     - '<green><bold>! <gray>Please type in a Name for your Shop in Chat!'
     - '<gray><italic>Color Codes are supported!'
@@ -82,3 +84,48 @@ pbooster:
   deactivate:
     MONETARY: '<dark_red>Your <red>%multiplier%x Booster (Money) wore off!'
     EXP: '<dark_red>Your <red>%multiplier%x Booster (Experience) wore off!'
+
+gui:
+  editor:
+    title: "<gold><bold>QuickSell - Shop Editor"
+    new-shop: "<red>New Shop"
+    new-shop-lore: "<gray>Click: <white>Create a new Shop"
+    shop-lore:
+      - "<reset>Left Click: <gray>Edit Shop"
+      - "<reset>Right Click: <gray>Edit Contents"
+      - "<reset>Shift + Right Click: <red>Delete Shop"
+
+  settings:
+    title: "<gold>Settings: <white>%shop%"
+    name: "<yellow>Name: <white>%name%"
+    name-lore: "<reset>Click: <gray>Change Name"
+    display-item: "<yellow>Display Item"
+    display-item-lore: "<reset>Click: <gray>Set item in hand"
+    permission: "<gray>Permission: <white>%permission%"
+    permission-lore: "<reset>Click: <gray>Change Permission Node"
+    permission-none: "None"
+    inheritance: "<aqua>Inheritance"
+    back: "<red>Back"
+
+  content:
+    title: "<gold>Editing: <white>%shop%"
+    edit-lore:
+      - "<gray>Price: <gold>$%price%"
+      - ""
+      - "<reset>Left Click: <gray>Edit Price"
+      - "<reset>Shift + Right Click: <red>Remove"
+    add-item: "<green>Add Item"
+    back: "<gray>⇐ Back"
+
+  price-editor:
+    title: "<gold>Set Price"
+    current-price: "<yellow>Current: $%price%"
+    adjustment: "<yellow>+/- $%value%"
+    save: "<green>Save"
+    cancel: "<red>Cancel"
+
+  inheritance:
+    title: "<gold>Inheritance: <white>%shop%"
+    status: "<gray>Inherit: %status%"
+    enabled: "<green><bold>✔"
+    disabled: "<red><bold>✘"

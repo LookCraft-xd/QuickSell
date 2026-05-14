@@ -66,6 +66,7 @@ public class MessageHandler {
             message = PlaceholderAPI.setPlaceholders(player, message);
         }
 
+        // Should?
         if (message.contains("%prefix%")) {
             String prefix = lang.getString("PREFIX", "");
             message = message.replace("%prefix%", prefix);
@@ -74,7 +75,6 @@ public class MessageHandler {
         if (placeholders != null) {
             for (Placeholder p : placeholders) {
                 message = p.apply(message);
-                ;
             }
         }
 
@@ -96,6 +96,10 @@ public class MessageHandler {
     }
 
     // # ~ # -------- GET RAWS -------- # ~ # //
+
+    public String getRawMessage(Messages messages) {
+        return getRawMessage(messages.getPath());
+    }
 
     public String getRawMessage(String path) {
         if (lang.isList(path)) {

@@ -13,11 +13,12 @@ dependencies {
     compileOnly(libs.me.clip.placeholderapi)
     compileOnly(libs.org.spigotmc.spigot.api)
     compileOnly(libs.com.github.milkbowl.vaultapi)
+    // Inheriting from triumph gui lol.
+    compileOnly(libs.net.kyori.adventure.serializer)
     compileOnly(libs.net.kyori.adventure.minimessage)
 
     implementation(libs.dev.dejvokep.boostedyaml)
     implementation(libs.dev.triumphteam.triumphgui)
-    implementation(libs.net.kyori.adventure.serializer)
     implementation(libs.dev.rollczi.litecommands.bukkit)
 
     // Dependencias transitivas weonas.
@@ -29,7 +30,7 @@ dependencies {
 }
 
 group = "me.mrCookieSlime"
-version = "3.0.0"
+version = "3.0.1"
 description = "quicksell"
 
 
@@ -59,10 +60,13 @@ tasks {
     }
 
     shadowJar {
-        //relocate ("net.kyori", "me.mrCookieSlime.QuickSell.libs.kyori")
-        relocate ("dev.triumphteam", "me.mrCookieSlime.QuickSell.libs.gui")
-        relocate ("dev.rollczi", "me.mrCookieSlime.QuickSell.libs.commands")
-        relocate ("dev.dejvokep", "me.mrCookieSlime.QuickSell.libs.boostedyaml")
+        archiveFileName.set("QuickSell-${version}.jar")
+        destinationDirectory.set(file("$rootDir/bin/"))
+
+        //relocate("net.kyori.adventure", "me.mrCookieSlime.QuickSell.libs.kyori")
+        relocate("dev.triumphteam", "me.mrCookieSlime.QuickSell.libs.gui")
+        relocate("dev.rollczi", "me.mrCookieSlime.QuickSell.libs.commands")
+        relocate("dev.dejvokep", "me.mrCookieSlime.QuickSell.libs.boostedyaml")
 
         exclude("org/jetbrains/annotations/**")
         exclude("org/intellij/lang/annotations/**")

@@ -38,7 +38,9 @@ public class QuickSellCommand {
     }
 
     @Execute(name = "reload")
-    public void onReload(@Context CommandSender sender) {
+    public void onReload(@Context CommandSender sender) throws IOException {
+        plugin.getConfiguration().reload();
+        plugin.getMessages().reload();
         plugin.getShopManager().loadShops();
         plugin.getBoosterManager().loadBoosters();
         messageHandler.build(sender, Messages.RELOAD).send();
@@ -72,38 +74,38 @@ public class QuickSellCommand {
 
 
     //TODO Create own shop manager commands ?
-
-    @Execute(name = "create")
-    public void onCreate(@Context CommandSender sender, @Arg String shopName) {
-        YamlDocument config = plugin.getConfiguration();
-        List<String> shops = config.getStringList("list");
-
-        if (!shops.contains(shopName)) {
-            shops.add(shopName);
-            config.set("list", shops);
-            // Opcional: inicializar valores básicos para la tienda
-            config.set("shops." + shopName + ".name", "&9" + shopName);
-
-            saveConfig(config);
-            //plugin.reload();
-            messageHandler.build(sender, Messages.SHOP_CREATED).placeholder("%shop%", shopName).send();
-        }
-    }
-
-    @Execute(name = "delete")
-    public void onDelete(@Context CommandSender sender, @Arg String shopName) {
-        YamlDocument config = plugin.getConfiguration();
-        List<String> shops = config.getStringList("list");
-
-        if (shops.remove(shopName)) {
-            config.set("list", shops);
-            config.set("shops." + shopName, null); // Elimina la sección completa
-
-            saveConfig(config);
-            //plugin.reload();
-            messageHandler.build(sender, Messages.SHOP_DELETED).placeholder("%shop%", shopName).send();
-        }
-    }
+//
+//    @Execute(name = "create")
+//    public void onCreate(@Context CommandSender sender, @Arg String shopName) {
+//        YamlDocument config = plugin.getConfiguration();
+//        List<String> shops = config.getStringList("list");
+//
+//        if (!shops.contains(shopName)) {
+//            shops.add(shopName);
+//            config.set("list", shops);
+//            // Opcional: inicializar valores básicos para la tienda
+//            config.set("shops." + shopName + ".name", "&9" + shopName);
+//
+//            saveConfig(config);
+//            //plugin.reload();
+//            messageHandler.build(sender, Messages.SHOP_CREATED).placeholder("%shop%", shopName).send();
+//        }
+//    }
+//
+//    @Execute(name = "delete")
+//    public void onDelete(@Context CommandSender sender, @Arg String shopName) {
+//        YamlDocument config = plugin.getConfiguration();
+//        List<String> shops = config.getStringList("list");
+//
+//        if (shops.remove(shopName)) {
+//            config.set("list", shops);
+//            config.set("shops." + shopName, null); // Elimina la sección completa
+//
+//            saveConfig(config);
+//            //plugin.reload();
+//            messageHandler.build(sender, Messages.SHOP_DELETED).placeholder("%shop%", shopName).send();
+//        }
+//    }
 
     private void saveConfig(YamlDocument config) {
         try {

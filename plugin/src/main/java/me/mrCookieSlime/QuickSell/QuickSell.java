@@ -45,6 +45,8 @@ public class QuickSell extends JavaPlugin {
     private LiteCommands<CommandSender> liteCommands;
 
     private LogManager logManager;
+
+    private YamlDocument messages;
     private YamlDocument configuration;
     private MessageHandler messageHandler;
 
@@ -64,13 +66,14 @@ public class QuickSell extends JavaPlugin {
         setupEconomy();
 
         // Initiate Variables
-        editor = new ShopEditor(this);
-        shopMenu = new ShopMenu(this);
         logManager = new LogManager(this);
         shopManager = new ShopManager(this);
         shopManager.loadShops();
         boosterManager = new BoosterManager(this);
         boosterManager.loadBoosters();
+
+        shopMenu = new ShopMenu(this);
+        editor = new ShopEditor(this);
 
         // Listeners
         PluginManager pluginManager = getServer().getPluginManager();
@@ -139,9 +142,8 @@ public class QuickSell extends JavaPlugin {
     }
 
     private void setupMessages() {
-        YamlDocument messagesFile;
         try {
-            messagesFile = YamlDocument.create(new File(getDataFolder(), "messages.yml"),
+            messages = YamlDocument.create(new File(getDataFolder(), "messages.yml"),
                     Objects.requireNonNull(getResource("messages.yml")),
                     LoaderSettings.builder().setAutoUpdate(true).build(),
                     DumperSettings.DEFAULT,
@@ -150,7 +152,7 @@ public class QuickSell extends JavaPlugin {
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
-        this.messageHandler = new MessageHandler(this, messagesFile);
+        this.messageHandler = new MessageHandler(this, messages);
     }
 
     /**
@@ -182,6 +184,10 @@ public class QuickSell extends JavaPlugin {
 
     public LogManager getLogManager() {
         return logManager;
+    }
+
+    public YamlDocument getMessages() {
+        return messages;
     }
 
     public YamlDocument getConfiguration() {

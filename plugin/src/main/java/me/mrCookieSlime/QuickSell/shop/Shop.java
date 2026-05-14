@@ -10,10 +10,9 @@ public class Shop {
 
     private final String id;
     private final int priority;
+    private final PriceInfo prices;
 
     private String name;
-    private PriceInfo prices;
-
     private Material material = Material.STONE;
     private String permission = null;
     private List<String> inheritance = new ArrayList<>();
@@ -52,14 +51,12 @@ public class Shop {
 
     public Map<String, Object> serialize() {
         Map<String, Object> map = new LinkedHashMap<>();
+        map.put("id", this.id);
         map.put("name", this.name);
         map.put("priority", this.priority);
         map.put("material", this.material.name());
         map.put("permission", this.permission);
-
-        if (!inheritance.isEmpty()) {
-            map.put("inheritance", this.inheritance);
-        }
+        map.put("inheritance", this.inheritance);
 
         map.put("price", prices.serialize());
 
