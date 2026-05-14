@@ -28,31 +28,25 @@ public class SellCommand {
 
     @Execute
     public void onDefault(@Context Player player, @OptionalArg String shopName) {
-        // Caso A: El usuario busca una tienda específica (/sell [nombre])
         if (shopName != null && !shopName.isEmpty()) {
             shopManager.getShop(shopName).ifPresentOrElse(shop -> {
-                if (shop.hasUnlocked(player)) {
-                    shopMenu.open(player, shop);
-                } else {
+                if (!shop.hasUnlocked(player)) {
                     messageHandler.build(player, Messages.NO_ACCESS).send();
+                    return;
                 }
+
+                shopMenu.open(player, shop);
             }, () -> messageHandler.build(player, Messages.UNKNOWN_SHOP).send());
             return;
         }
 
-        // Caso B: El usuario solo puso /sell
-        // Intentamos obtener la tienda de mayor prioridad a la que tenga acceso
-        shopManager.getHighestShop(player).ifPresentOrElse(
-                shop -> shopMenu.open(player, shop),
-                () -> {
-                    // Si no tiene acceso a ninguna tienda específica o no hay tiendas,
-                    // intentamos abrir el selector general de tiendas.
-                    if (shopManager.getAllShops().isEmpty()) {
-                        messageHandler.build(player, Messages.UNKNOWN_SHOP).send();
-                    } else {
-                        shopMenu.openMenu(player);
+        shopManager.getHighestShop(player).ifPresentOrElse(shop -> {
+                    if (!shop.hasUnlocked(player)) {
+                        messageHandler.build(player, Messages.NO_ACCESS).send();
+                        return;
                     }
-                }
+                    shopMenu.open(player, shop);
+                }, () -> shopMenu.openMenu(player)
         );
     }
 }

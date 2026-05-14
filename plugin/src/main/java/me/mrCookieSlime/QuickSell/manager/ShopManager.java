@@ -170,16 +170,16 @@ public class ShopManager {
     private void sendFeedback(Player p, double raw, double total, int count, double mult) {
         // Mensaje estándar
         plugin.getMessageHandler().build(p, Messages.SELL)
-                .placeholder("{MONEY}", DoubleHandler.getFancyDouble(raw))
-                .placeholder("{ITEMS}", String.valueOf(count))
+                .placeholder("{MONEY}", DoubleHandler.getFancyDouble(total))
+                .placeholder("{ITEMS}", count)
                 .send();
 
         // Mensaje de Booster (si aplica)
         if (mult > 1.0) {
-            plugin.getMessageHandler().build(p, "messages.total-with-boosters")
+            plugin.getMessageHandler().build(p, "messages.total")
                     .placeholder("{EXTRA}", DoubleHandler.getFancyDouble(total - raw))
                     .placeholder("{TOTAL}", DoubleHandler.getFancyDouble(total))
-                    .placeholder("{MULTIPLIER}", String.valueOf(mult))
+                    .placeholder("{MULTIPLIER}", mult)
                     .send();
         }
 
