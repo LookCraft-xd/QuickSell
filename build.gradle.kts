@@ -12,6 +12,7 @@ subprojects {
         maven("https://repo.panda-lang.org/releases")
         maven("https://repo.destroystokyo.com/repository/maven-public/")
         maven("https://hub.spigotmc.org/nexus/content/repositories/snapshots/")
+        maven("https://repo.extendedclip.com/content/repositories/placeholderapi/")
     }
 
     group = "me.mrCookieSlime"

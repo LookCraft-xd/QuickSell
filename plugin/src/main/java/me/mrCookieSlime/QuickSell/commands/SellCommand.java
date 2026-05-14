@@ -4,64 +4,55 @@ import dev.rollczi.litecommands.annotations.command.Command;
 import dev.rollczi.litecommands.annotations.context.Context;
 import dev.rollczi.litecommands.annotations.execute.Execute;
 import dev.rollczi.litecommands.annotations.optional.OptionalArg;
-import dev.triumphteam.gui.builder.item.ItemBuilder;
-import dev.triumphteam.gui.guis.Gui;
 import me.mrCookieSlime.QuickSell.QuickSell;
-import me.mrCookieSlime.QuickSell.shop.Shop;
-import me.mrCookieSlime.QuickSell.shop.ShopMenu;
-import me.mrCookieSlime.QuickSell.shop.ShopStatus;
-import net.kyori.adventure.text.Component;
-import org.bukkit.ChatColor;
-import org.bukkit.Material;
-import org.bukkit.command.CommandSender;
+import me.mrCookieSlime.QuickSell.core.utils.enums.Messages;
+import me.mrCookieSlime.QuickSell.core.utils.message.MessageHandler;
+import me.mrCookieSlime.QuickSell.inventories.ShopMenu;
+import me.mrCookieSlime.QuickSell.manager.ShopManager;
 import org.bukkit.entity.Player;
-import org.bukkit.inventory.ItemStack;
 
 @Command(name = "sell")
 public class SellCommand {
 
-    @Execute
-    public void onDefault(@Context CommandSender sender, @OptionalArg("[Shop Name]") String shopName) {
-        if (!QuickSell.cfg.getBoolean("options.enable-commands")) {
-            QuickSell.local.sendMessage(sender, "commands.disabled", false);
-            return;
-        }
+    private final QuickSell plugin;
+    private final ShopMenu shopMenu;
+    private final ShopManager shopManager;
+    private final MessageHandler messageHandler;
 
-        if (!(sender instanceof Player)) {
-            sender.sendMessage(ChatColor.translateAlternateColorCodes('&', "This Command is only for Players"));
-            return;
-        }
-
-        if (Shop.list().size() == 1) {
-            ShopMenu.open((Player) sender, Shop.list().get(0));
-            return;
-        }
-
-        if (shopName == null) {
-            ShopMenu.openMenu((Player) sender);
-            return;
-        }
-
-        Shop shop = Shop.getShop(shopName);
-        if (shop != null) {
-            if (!shop.hasUnlocked((Player) sender)) {
-                QuickSell.local.sendMessage(sender, "messages.no-access", false);
-                return;
-            }
-
-            ShopMenu.open((Player) sender, shop);
-            return;
-        } else {
-            QuickSell.local.sendMessage(sender, "messages.unknown-shop", false);
-        }
-
-        if (QuickSell.cfg.getBoolean("options.open-only-shop-with-permission")) {
-            if (Shop.getHighestShop((Player) sender) == null) {
-                QuickSell.local.sendMessage(sender, "messages.no-access", false);
-                return;
-            }
-            ShopMenu.open((Player) sender, Shop.getHighestShop((Player) sender));
-        }
+    public SellCommand(QuickSell plugin) {
+        this.plugin = plugin;
+        this.shopMenu = plugin.getShopMenu();
+        this.shopManager = plugin.getShopManager();
+        this.messageHandler = plugin.getMessageHandler();
     }
 
+    @Execute
+    public void onDefault(@Context Player player, @OptionalArg String shopName) {
+        // Caso A: El usuario busca una tienda específica (/sell [nombre])
+        if (shopName != null && !shopName.isEmpty()) {
+            shopManager.getShop(shopName).ifPresentOrElse(shop -> {
+                if (shop.hasUnlocked(player)) {
+                    shopMenu.open(player, shop);
+                } else {
+                    messageHandler.build(player, Messages.NO_ACCESS).send();
+                }
+            }, () -> messageHandler.build(player, Messages.UNKNOWN_SHOP).send());
+            return;
+        }
+
+        // Caso B: El usuario solo puso /sell
+        // Intentamos obtener la tienda de mayor prioridad a la que tenga acceso
+        shopManager.getHighestShop(player).ifPresentOrElse(
+                shop -> shopMenu.open(player, shop),
+                () -> {
+                    // Si no tiene acceso a ninguna tienda específica o no hay tiendas,
+                    // intentamos abrir el selector general de tiendas.
+                    if (shopManager.getAllShops().isEmpty()) {
+                        messageHandler.build(player, Messages.UNKNOWN_SHOP).send();
+                    } else {
+                        shopMenu.openMenu(player);
+                    }
+                }
+        );
+    }
 }

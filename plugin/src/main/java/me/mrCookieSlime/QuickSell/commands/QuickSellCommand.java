@@ -1,141 +1,147 @@
 package me.mrCookieSlime.QuickSell.commands;
 
+import dev.dejvokep.boostedyaml.YamlDocument;
 import dev.rollczi.litecommands.annotations.argument.Arg;
 import dev.rollczi.litecommands.annotations.command.Command;
 import dev.rollczi.litecommands.annotations.context.Context;
 import dev.rollczi.litecommands.annotations.execute.Execute;
-import dev.rollczi.litecommands.annotations.execute.ExecuteDefault;
 import dev.rollczi.litecommands.annotations.optional.OptionalArg;
 import dev.rollczi.litecommands.annotations.permission.Permission;
 import me.mrCookieSlime.QuickSell.QuickSell;
-import me.mrCookieSlime.QuickSell.shop.Shop;
 import me.mrCookieSlime.QuickSell.boosters.Booster;
-import me.mrCookieSlime.QuickSell.utils.Variable;
-import me.mrCookieSlime.QuickSell.utils.maths.DoubleHandler;
-import org.bukkit.ChatColor;
+import me.mrCookieSlime.QuickSell.core.utils.enums.Messages;
+import me.mrCookieSlime.QuickSell.core.utils.message.MessageBuilder;
+import me.mrCookieSlime.QuickSell.core.utils.message.MessageHandler;
+import me.mrCookieSlime.QuickSell.manager.BoosterManager;
+import me.mrCookieSlime.QuickSell.shop.Shop;
+import me.mrCookieSlime.QuickSell.utils.DoubleHandler;
 import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
 
+import java.io.IOException;
 import java.util.Iterator;
 import java.util.List;
+import java.util.logging.Level;
 
 @Command(name = "quicksell", aliases = "qs")
 @Permission("quicksell.manage")
 public class QuickSellCommand {
 
     public final QuickSell plugin;
+    private final BoosterManager boosterManager;
+    private final MessageHandler messageHandler;
 
     public QuickSellCommand(QuickSell plugin) {
         this.plugin = plugin;
-    }
-
-    @ExecuteDefault
-    public void onDefault(@Context CommandSender sender) {
-        sendHelpMessager(sender);
+        this.boosterManager = plugin.getBoosterManager();
+        this.messageHandler = plugin.getMessageHandler();
     }
 
     @Execute(name = "reload")
     public void onReload(@Context CommandSender sender) {
-        plugin.reload();
-        QuickSell.local.sendMessage(sender, "commands.reload.done", false);
+        plugin.getShopManager().loadShops();
+        plugin.getBoosterManager().loadBoosters();
+        messageHandler.build(sender, Messages.RELOAD).send();
     }
 
     @Execute(name = "editor")
     public void onEditor(@Context CommandSender sender) {
-        if (sender instanceof Player) plugin.editor.openEditor((Player) sender);
+        if (sender instanceof Player) plugin.getEditor().openEditor((Player) sender);
     }
 
-    @Execute(name = "edit")
-    //@Syntax("<Shop Name> <Item> <Price>")
-    public void onEdit(@Context CommandSender sender, @Arg String shop, @Arg String item, @Arg Double price) {
-        if (Shop.getShop(shop) == null) {
-            QuickSell.local.sendMessage(sender, "messages.unknown-shop", false);
-            return;
-        }
+    // Might need some work...
+//    @Execute(name = "edit")
+//    public void onEdit(@Context CommandSender sender, @Arg String shop, @Arg String item, @Arg Double price) {
+//        if (Shop.getShop(shop) == null) {
+//            messageHandler.build(sender, Messages.UNKNOWN_SHOP).send();
+//            return;
+//        }
+//
+//        YamlDocument config = plugin.getConfiguration();
+//        config.set("shops." + shop + ".price." + item.toUpperCase(), price);
+//
+//        saveConfig(config);
+//        //plugin.reload();
+//
+//        messageHandler.build(sender, Messages.PRICE_SET)
+//                .placeholder("%shop%", shop)
+//                .placeholder("%price%", DoubleHandler.getFancyDouble(price))
+//                .placeholder("%item%", item.toUpperCase())
+//                .send();
+//    }
 
-        if (item == null || price == null) {
-            QuickSell.local.sendMessage(sender, "commands.usage", false, new Variable("%usage%", "/quicksell edit <ShopName> <Item> <Price>"));
-        }
 
-        QuickSell.cfg.setValue("shops." + shop + ".price." + item.toUpperCase(), price);
-        QuickSell.cfg.save();
-        plugin.reload();
-        QuickSell.local.sendMessage(sender, "commands.price-set", false
-                , new Variable("%item%", item.toUpperCase())
-                , new Variable("%price%", DoubleHandler.getFancyDouble(price))
-                , new Variable("%shop%", shop));
-    }
+    //TODO Create own shop manager commands ?
 
     @Execute(name = "create")
-    //@Syntax("<Shop Name>")
     public void onCreate(@Context CommandSender sender, @Arg String shopName) {
-        if (shopName == null) {
-            QuickSell.local.sendMessage(sender, "commands.usage", false, new Variable("%usage%", "/quicksell create <ShopName>"));
+        YamlDocument config = plugin.getConfiguration();
+        List<String> shops = config.getStringList("list");
+
+        if (!shops.contains(shopName)) {
+            shops.add(shopName);
+            config.set("list", shops);
+            // Opcional: inicializar valores básicos para la tienda
+            config.set("shops." + shopName + ".name", "&9" + shopName);
+
+            saveConfig(config);
+            //plugin.reload();
+            messageHandler.build(sender, Messages.SHOP_CREATED).placeholder("%shop%", shopName).send();
         }
-
-        List<String> shops = QuickSell.cfg.getStringList("list");
-        shops.add(shopName);
-        QuickSell.cfg.setValue("list", shops);
-        QuickSell.cfg.save();
-
-        plugin.reload();
-
-        QuickSell.local.sendMessage(sender, "commands.shop-created", false, new Variable("%shop%", shopName));
     }
 
     @Execute(name = "delete")
-    //@Syntax("<Shop Name>")
     public void onDelete(@Context CommandSender sender, @Arg String shopName) {
-        if (shopName == null) {
-            QuickSell.local.sendMessage(sender, "commands.usage", false, new Variable("%usage%", "/quicksell delete <ShopName>"));
+        YamlDocument config = plugin.getConfiguration();
+        List<String> shops = config.getStringList("list");
+
+        if (shops.remove(shopName)) {
+            config.set("list", shops);
+            config.set("shops." + shopName, null); // Elimina la sección completa
+
+            saveConfig(config);
+            //plugin.reload();
+            messageHandler.build(sender, Messages.SHOP_DELETED).placeholder("%shop%", shopName).send();
         }
+    }
 
-        List<String> shops = QuickSell.cfg.getStringList("list");
-        shops.remove(shopName);
-        QuickSell.cfg.setValue("list", shops);
-        QuickSell.cfg.save();
-
-        plugin.reload();
-
-        QuickSell.local.sendMessage(sender, "commands.shop-deleted", false, new Variable("%shop%", shopName));
+    private void saveConfig(YamlDocument config) {
+        try {
+            config.save();
+        } catch (IOException e) {
+            QuickSell.log(Level.SEVERE, "Could not save config.yml: " + e.getMessage());
+        }
     }
 
     @Execute(name = "stopboosters")
-    //@Syntax("[Player]")
     public void stopBoosters(@Context CommandSender sender, @OptionalArg String player) {
-        Iterator<Booster> boosters = Booster.iterate();
+        List<Booster> active = boosterManager.getActiveBoosters();
 
-        if (player == null) {
-            while (boosters.hasNext()) {
-                Booster booster = boosters.next();
-                boosters.remove();
-                booster.deactivate();
-            }
-            QuickSell.local.sendMessage(sender, "boosters.reset", false);
+        if (active.isEmpty()) {
+            sender.sendMessage("No hay boosters activos para detener.");
             return;
         }
 
-        while (boosters.hasNext()) {
-            Booster booster = boosters.next();
-            if (booster.getAppliedPlayers().contains(player)) {
-                boosters.remove();
-                booster.deactivate();
+        Iterator<Booster> it = active.iterator();
+        boolean found = false;
+
+        while (it.hasNext()) {
+            Booster booster = it.next();
+
+            // Si player es null (reset global) o el dueño coincide
+            if (player == null || booster.getOwner().equalsIgnoreCase(player)) {
+                boosterManager.deactivateBooster(booster);
+                found = true;
             }
         }
-        QuickSell.local.sendMessage(sender, "booster.reset", false, new Variable("%player%", player));
-    }
 
-    private void sendHelpMessager(CommandSender sender) {
-        sender.sendMessage(ChatColor.translateAlternateColorCodes('&', ""));
-        sender.sendMessage(ChatColor.translateAlternateColorCodes('&', "&e&lQuickSell v" + plugin.getDescription().getVersion() + " by &6mrCookieSlime"));
-        sender.sendMessage(ChatColor.translateAlternateColorCodes('&', ""));
-        sender.sendMessage(ChatColor.translateAlternateColorCodes('&', "&7\u21E8 /quicksell: &bDisplays this Help Menu"));
-        sender.sendMessage(ChatColor.translateAlternateColorCodes('&', "&7\u21E8 /quicksell reload: &bReloads all of QuickSell's Files and Systems"));
-        sender.sendMessage(ChatColor.translateAlternateColorCodes('&', "&7\u21E8 /quicksell editor: &bOpens up the Ingame Shop Editor"));
-        sender.sendMessage(ChatColor.translateAlternateColorCodes('&', "&7\u21E8 /quicksell stopboosters [Player]: &bStops certain Boosters"));
-    }
+        if (!found && player != null) {
+            sender.sendMessage("No se encontraron boosters para el jugador: " + player);
+            return;
+        }
 
-    public QuickSell getPlugin() {
-        return plugin;
+        MessageBuilder builder = messageHandler.build(sender, Messages.BOOSTER_RESET);
+        if (player != null) builder.placeholder("%player%", player);
+        builder.send();
     }
 }

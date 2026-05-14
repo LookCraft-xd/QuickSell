@@ -1,4 +1,4 @@
-package me.mrCookieSlime.QuickSell.utils.maths;
+package me.mrCookieSlime.QuickSell.utils;
 
 import java.text.DecimalFormat;
 

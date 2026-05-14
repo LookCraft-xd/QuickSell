@@ -1,12 +1,16 @@
 package me.mrCookieSlime.QuickSell.listeners;
 
+import dev.dejvokep.boostedyaml.YamlDocument;
 import me.mrCookieSlime.QuickSell.QuickSell;
-import me.mrCookieSlime.QuickSell.interfaces.SellEvent;
-import me.mrCookieSlime.QuickSell.shop.Shop;
-import me.mrCookieSlime.QuickSell.shop.ShopMenu;
+import me.mrCookieSlime.QuickSell.core.utils.enums.Messages;
+import me.mrCookieSlime.QuickSell.core.utils.message.MessageHandler;
+import me.mrCookieSlime.QuickSell.inventories.ShopMenu;
+import me.mrCookieSlime.QuickSell.manager.ShopManager;
+import me.mrCookieSlime.QuickSell.utils.SellType;
 import org.bukkit.ChatColor;
 import org.bukkit.GameMode;
 import org.bukkit.block.Sign;
+import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
 import org.bukkit.event.block.Action;
@@ -15,129 +19,104 @@ import org.bukkit.event.player.PlayerInteractEvent;
 
 public class SignSellListener implements Listener {
 
+    private final ShopMenu shopMenu;
+    private final YamlDocument config;
+    private final ShopManager shopManager;
+    private final MessageHandler messageHandler;
+
+    public SignSellListener(QuickSell plugin) {
+        this.shopMenu = plugin.getShopMenu();
+        this.config = plugin.getConfiguration();
+        this.shopManager = plugin.getShopManager();
+        this.messageHandler = plugin.getMessageHandler();
+    }
+
     @EventHandler
     public void onSignCreate(SignChangeEvent e) {
-        // SELL SIGN
-        String prefix = ChatColor.translateAlternateColorCodes('&', QuickSell.cfg.getString("options.sign-prefix"));
-        if (e.getLines()[0].equalsIgnoreCase(ChatColor.stripColor(prefix))) {
+        // Obtenemos los prefijos desde la config
+        String sellPrefix = color(config.getString("options.sign-prefix", "&1[Sell]"));
+        String sellAllPrefix = color(config.getString("options.sellall-sign-prefix", "&1[Sell All]"));
 
-            if (e.getPlayer().hasPermission("QuickSell.sign.create")) {
-                e.setLine(0, prefix);
+        String firstLine = e.getLine(0);
+        if (firstLine == null) return;
+
+        // Validamos si es un cartel de QuickSell (limpiando colores para comparar)
+        boolean isSell = firstLine.equalsIgnoreCase(ChatColor.stripColor(sellPrefix));
+        boolean isSellAll = firstLine.equalsIgnoreCase(ChatColor.stripColor(sellAllPrefix));
+
+        if (isSell || isSellAll) {
+            if (!e.getPlayer().hasPermission("quicksell.sign.create")) {
+                e.setCancelled(true);
+                messageHandler.build(e.getPlayer(), Messages.NO_PERMISSION).send();
                 return;
             }
-
-            e.setCancelled(true);
-            QuickSell.local.sendMessage(e.getPlayer(), "messages.no-permission", false);
-        }
-
-        // SELLALL SIGN
-        prefix = ChatColor.translateAlternateColorCodes('&', QuickSell.cfg.getString("options.sellall-sign-prefix"));
-        if (e.getLines()[0].equalsIgnoreCase(ChatColor.stripColor(prefix))) {
-            if (e.getPlayer().hasPermission("QuickSell.sign.create")) {
-                e.setLine(0, prefix);
-                return;
-            }
-
-            e.setCancelled(true);
-            QuickSell.local.sendMessage(e.getPlayer(), "messages.no-permission", false);
+            e.setLine(0, isSell ? sellPrefix : sellAllPrefix);
         }
     }
 
     @EventHandler
     public void onInteract(PlayerInteractEvent e) {
+        if (e.getClickedBlock() == null || !(e.getClickedBlock().getState() instanceof Sign)) return;
+
+        Sign sign = (Sign) e.getClickedBlock().getState();
+        Player p = e.getPlayer();
+        String line0 = sign.getLine(0);
+
+        String sellPrefix = color(config.getString("options.sign-prefix", "&1[Sell]"));
+        String sellAllPrefix = color(config.getString("options.sellall-sign-prefix", "&1[Sell All]"));
+
+        // --- CLIC DERECHO: Abrir Menús o Vender Todo ---
         if (e.getAction() == Action.RIGHT_CLICK_BLOCK) {
-            if (e.getClickedBlock().getState() instanceof Sign) {
 
-                // IF SIGN IS [SELL] OPEN SELL MENU
-                Sign sign = (Sign) e.getClickedBlock().getState();
-                if (sign.getLine(0).equalsIgnoreCase(ChatColor.translateAlternateColorCodes('&', QuickSell.cfg.getString("options.sign-prefix")))) {
-                    Shop shop = Shop.getShop(sign.getLine(1));
-                    if (shop != null) {
-                        ShopMenu.open(e.getPlayer(), shop);
-                        return;
-                    }
+            // Caso: [Sell] -> Abrir menú de venta
+            if (line0.equalsIgnoreCase(sellPrefix)) {
+                String targetShop = sign.getLine(1);
 
-                    ShopMenu.openMenu(e.getPlayer());
-                    e.setCancelled(true);
-                    return;
-                }
+                shopManager.getShop(targetShop).ifPresentOrElse(
+                        shop -> shopMenu.open(p, shop),
+                        () -> shopMenu.openMenu(p) // Fallback al selector si la tienda no existe
+                );
+                return;
+            }
 
-                // IF SIGN IS [SELLALL] THEN SELL ALL INVENTORY
-                if (sign.getLine(0).equalsIgnoreCase(ChatColor.translateAlternateColorCodes('&', QuickSell.cfg.getString("options.sellall-sign-prefix")))) {
-                    Shop shop = Shop.getShop(sign.getLine(1));
-                    if (shop != null) {
-                        if (shop.hasUnlocked(e.getPlayer())) {
-                            String item = sign.getLine(2);
-                            item = item.toUpperCase();
+            // Caso: [Sell All] -> Vender inventario instantáneo
+            if (line0.equalsIgnoreCase(sellAllPrefix)) {
+                String targetShop = sign.getLine(1);
+                String itemFilter = sign.getLine(2).toUpperCase().replace(" ", "_");
 
-                            if (item.contains(" ")) {
-                                item = item.replace(" ", "_");
-                            }
-
-                            shop.sellall(e.getPlayer(), item, SellEvent.Type.SELLALL);
-                            return;
-                        }
-                        QuickSell.local.sendMessage(e.getPlayer(), "messages.no-access", false);
-                        return;
-                    }
-
-                    if (Shop.getHighestShop(e.getPlayer()) != null) {
-                        String item = sign.getLine(2);
-                        item = item.toUpperCase();
-
-                        if (item.contains(" ")) {
-                            item = item.replace(" ", "_");
-                        }
-
-                        Shop.getHighestShop(e.getPlayer()).sellall(e.getPlayer(), item, SellEvent.Type.SELLALL);
+                shopManager.getShop(targetShop).ifPresentOrElse(shop -> {
+                    if (shop.hasUnlocked(p)) {
+                        shopManager.sellItemInShop(p, shop, itemFilter);
                     } else {
-                        QuickSell.local.sendMessage(e.getPlayer(), "messages.unknown-shop", false);
-                        return;
+                        messageHandler.build(p, Messages.NO_ACCESS).send();
                     }
-
-                    e.setCancelled(true);
-                }
-            }
-            return;
-        }
-
-        // SHOW PRICES
-        if (e.getAction() == Action.LEFT_CLICK_BLOCK && e.getPlayer().getGameMode() != GameMode.CREATIVE) {
-            if (e.getClickedBlock().getState() instanceof Sign) {
-                Sign sign = (Sign) e.getClickedBlock().getState();
-
-                // IF SIGN IS A [SELL] SIGN
-                if (sign.getLine(0).equalsIgnoreCase(ChatColor.translateAlternateColorCodes('&', QuickSell.cfg.getString("options.sign-prefix")))) {
-                    Shop shop = Shop.getShop(sign.getLine(1));
-                    if (shop != null) {
-                        shop.showPrices(e.getPlayer());
-                        return;
-                    }
-
-                    if (Shop.getHighestShop(e.getPlayer()) != null) {
-                        Shop.getHighestShop(e.getPlayer()).showPrices(e.getPlayer());
-                        return;
-                    }
-                    return;
-                }
-
-                // IF SIGN IS A [SELLALL] SIGN
-                if (sign.getLine(0).equalsIgnoreCase(ChatColor.translateAlternateColorCodes('&', QuickSell.cfg.getString("options.sellall-sign-prefix")))) {
-                    Shop shop = Shop.getShop(sign.getLine(1));
-                    if (shop != null) {
-                        if (shop.hasUnlocked(e.getPlayer())) {
-                            shop.showPrices(e.getPlayer());
-                            return;
-                        }
-                        QuickSell.local.sendMessage(e.getPlayer(), "messages.no-access", false);
-                        return;
-                    }
-
-                    if (Shop.getHighestShop(e.getPlayer()) != null) {
-                        Shop.getHighestShop(e.getPlayer()).showPrices(e.getPlayer());
-                    }
-                }
+                }, () -> {
+                    // Si no hay tienda en la línea 2, usar la mejor disponible
+                    shopManager.getHighestShop(p).ifPresentOrElse(
+                            highest -> shopManager.sellItemInShop(p, highest, itemFilter),
+                            () -> messageHandler.build(p, Messages.UNKNOWN_SHOP).send()
+                    );
+                });
             }
         }
+
+        // --- CLIC IZQUIERDO: Ver Precios ---
+        if (e.getAction() == Action.LEFT_CLICK_BLOCK && p.getGameMode() != GameMode.CREATIVE) {
+            if (line0.equalsIgnoreCase(sellPrefix) || line0.equalsIgnoreCase(sellAllPrefix)) {
+                String targetShop = sign.getLine(1);
+
+                shopManager.getShop(targetShop).ifPresentOrElse(
+                        shop -> {
+                            if (shop.hasUnlocked(p)) shopMenu.openPrices(p, shop);
+                            else messageHandler.build(p, Messages.NO_ACCESS).send();
+                        },
+                        () -> shopManager.getHighestShop(p).ifPresent(highest -> shopMenu.openPrices(p, highest))
+                );
+            }
+        }
+    }
+
+    private String color(String text) {
+        return ChatColor.translateAlternateColorCodes('&', text);
     }
 }

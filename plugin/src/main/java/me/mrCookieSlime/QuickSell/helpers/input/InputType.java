@@ -1,4 +1,4 @@
-package me.mrCookieSlime.QuickSell.utils.helpers.input;
+package me.mrCookieSlime.QuickSell.helpers.input;
 
 public enum InputType {
 	

@@ -5,11 +5,16 @@ import dev.rollczi.litecommands.invalidusage.InvalidUsage;
 import dev.rollczi.litecommands.invalidusage.InvalidUsageHandler;
 import dev.rollczi.litecommands.invocation.Invocation;
 import dev.rollczi.litecommands.schematic.Schematic;
-import me.mrCookieSlime.QuickSell.QuickSell;
-import me.mrCookieSlime.QuickSell.utils.Variable;
+import me.mrCookieSlime.QuickSell.core.utils.message.MessageHandler;
 import org.bukkit.command.CommandSender;
 
 public class CommandInvalidUsage implements InvalidUsageHandler<CommandSender> {
+
+    private final MessageHandler messageHandler;
+
+    public CommandInvalidUsage(MessageHandler messageHandler) {
+        this.messageHandler = messageHandler;
+    }
 
     @Override
     public void handle(Invocation<CommandSender> invocation, InvalidUsage<CommandSender> result, ResultHandlerChain<CommandSender> chain) {
@@ -18,12 +23,12 @@ public class CommandInvalidUsage implements InvalidUsageHandler<CommandSender> {
 
         String usagePath = "commands.usage";
         if (schematic.isOnlyFirst()) {
-            QuickSell.local.sendMessage(sender, usagePath, false, new Variable("%usage%", schematic.first()));
+            messageHandler.build(sender, usagePath).placeholder("%usage%", schematic.first()).send();
             return;
         }
 
         for (String scheme : schematic.all()) {
-            QuickSell.local.sendMessage(sender, usagePath, false, new Variable("%usage%", scheme));
+            messageHandler.build(sender, usagePath).placeholder("%usage%", scheme).send();
         }
     }
 }

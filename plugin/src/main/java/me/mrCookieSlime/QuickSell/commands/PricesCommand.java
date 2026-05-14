@@ -1,15 +1,15 @@
 package me.mrCookieSlime.QuickSell.commands;
 
-import dev.rollczi.litecommands.annotations.argument.Arg;
 import dev.rollczi.litecommands.annotations.command.Command;
 import dev.rollczi.litecommands.annotations.context.Context;
 import dev.rollczi.litecommands.annotations.execute.Execute;
+import dev.rollczi.litecommands.annotations.optional.OptionalArg;
 import dev.rollczi.litecommands.annotations.permission.Permission;
 import me.mrCookieSlime.QuickSell.QuickSell;
-import me.mrCookieSlime.QuickSell.shop.Shop;
-import me.mrCookieSlime.QuickSell.shop.ShopMenu;
-import org.bukkit.ChatColor;
-import org.bukkit.command.CommandSender;
+import me.mrCookieSlime.QuickSell.core.utils.enums.Messages;
+import me.mrCookieSlime.QuickSell.core.utils.message.MessageHandler;
+import me.mrCookieSlime.QuickSell.inventories.ShopMenu;
+import me.mrCookieSlime.QuickSell.manager.ShopManager;
 import org.bukkit.entity.Player;
 
 
@@ -17,36 +17,35 @@ import org.bukkit.entity.Player;
 @Permission("quicksell.prices")
 public class PricesCommand {
 
-    @Execute
-    public void onDefault(@Context CommandSender sender, @Arg("<Shop Name>") String shopName) {
-        if (!(sender instanceof Player)) {
-            sender.sendMessage(ChatColor.translateAlternateColorCodes('&', "This Command is only for Players"));
-            return;
-        }
+    private final ShopMenu shopMenu;
+    private final ShopManager shopManager;
+    private final MessageHandler messageHandler;
 
-        Shop shop = Shop.getShop(shopName);
-        if (shop != null) {
-            if (!shop.hasUnlocked((Player) sender)) {
-                QuickSell.local.sendMessage(sender, "messages.no-access", false);
-                return;
-            }
-
-            ShopMenu.openPrices(((Player) sender).getPlayer(), shop);
-            return;
-        } else {
-            QuickSell.local.sendMessage(sender, "messages.unknown-shop", false);
-        }
-
-        if (QuickSell.cfg.getBoolean("options.open-only-shop-with-permission")) {
-            Shop highestShop = Shop.getHighestShop((Player) sender);
-            if (highestShop == null) {
-                QuickSell.local.sendMessage(sender, "messages.no-access", false);
-                return;
-            }
-            ShopMenu.openPrices(((Player) sender).getPlayer(), highestShop);
-            return;
-        }
-        QuickSell.local.sendMessage(sender, "commands.prices.usage", false);
+    public PricesCommand(QuickSell plugin) {
+        this.shopMenu = plugin.getShopMenu();
+        this.shopManager = plugin.getShopManager();
+        this.messageHandler = plugin.getMessageHandler();
     }
 
+    @Execute
+    public void onDefault(@Context Player player, @OptionalArg String shopName) {
+
+        // 1. Caso: El jugador especificó una tienda: /price [nombre]
+        if (shopName != null && !shopName.isEmpty()) {
+            shopManager.getShop(shopName).ifPresentOrElse(shop -> {
+                if (shop.hasUnlocked(player)) {
+                    shopMenu.openPrices(player, shop);
+                } else {
+                    messageHandler.build(player, Messages.NO_ACCESS).send();
+                }
+            }, () -> messageHandler.build(player, Messages.UNKNOWN_SHOP).send());
+            return;
+        }
+
+        // 2. Caso: Solo puso /price. Buscamos su mejor tienda disponible.
+        shopManager.getHighestShop(player).ifPresentOrElse(
+                highestShop -> shopMenu.openPrices(player, highestShop),
+                () -> messageHandler.build(player, Messages.NO_ACCESS).send()
+        );
+    }
 }

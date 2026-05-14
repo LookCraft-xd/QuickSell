@@ -1,7 +1,8 @@
 package me.mrCookieSlime.QuickSell.logs;
 
+import dev.dejvokep.boostedyaml.YamlDocument;
 import me.mrCookieSlime.QuickSell.QuickSell;
-import me.mrCookieSlime.QuickSell.interfaces.SellEvent;
+import me.mrCookieSlime.QuickSell.utils.SellType;
 import org.bukkit.Bukkit;
 import org.bukkit.entity.Player;
 
@@ -11,17 +12,19 @@ import java.util.Date;
 
 public class LogManager {
 
-    private final QuickSell plugin;
     private final File logFolder;
+    private final QuickSell plugin;
+    private final YamlDocument config;
 
     public LogManager(QuickSell plugin) {
         this.plugin = plugin;
+        this.config = plugin.getConfiguration();
         this.logFolder = new File(plugin.getDataFolder(), "logs");
         if (!logFolder.exists()) logFolder.mkdirs();
     }
 
-    public void log(Player p, SellEvent.Type type, int items, double money) {
-        if (!QuickSell.cfg.getBoolean("shop.enable-logging")) return;
+    public void log(Player p, SellType type, int items, double money) {
+        if (!config.getBoolean("shop.enable-logging")) return;
 
         Bukkit.getScheduler().runTaskAsynchronously(plugin, () -> {
             String date = new SimpleDateFormat("dd-MM-yyyy").format(new Date());

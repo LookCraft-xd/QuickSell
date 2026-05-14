@@ -3,24 +3,51 @@ package me.mrCookieSlime.QuickSell.commands;
 import dev.rollczi.litecommands.annotations.command.Command;
 import dev.rollczi.litecommands.annotations.context.Context;
 import dev.rollczi.litecommands.annotations.execute.Execute;
+import me.mrCookieSlime.QuickSell.QuickSell;
 import me.mrCookieSlime.QuickSell.boosters.Booster;
-import org.bukkit.ChatColor;
+import me.mrCookieSlime.QuickSell.core.utils.message.MessageBuilder;
+import me.mrCookieSlime.QuickSell.core.utils.message.MessageHandler;
+import me.mrCookieSlime.QuickSell.manager.BoosterManager;
 import org.bukkit.entity.Player;
+
+import java.util.List;
+import java.util.StringJoiner;
 
 @Command(name = "boosters")
 public class BoostersCommand {
 
+    private final BoosterManager boosterManager;
+    private final MessageHandler messageHandler;
+
+    public BoostersCommand(QuickSell plugin) {
+        this.boosterManager = plugin.getBoosterManager();
+        this.messageHandler = plugin.getMessageHandler();
+    }
+
     @Execute
-    public void onDefault(@Context Player sender) {
-        if (Booster.getBoosters(sender.getName()).isEmpty()) {
-            sender.sendMessage("No available Boosters");
+    public void onDefault(@Context Player player) {
+        if (boosterManager.getActiveBoosters().isEmpty()) {
+            player.sendMessage("No available Boosters");
             return;
         }
 
-        sender.sendMessage("Available Boosters:");
-        Booster.getBoosters(sender.getName()).forEach(booster -> {
-            sender.sendMessage(ChatColor.translateAlternateColorCodes('&', (booster.isPrivate() ? "&6&lPrivado" : "&2&lGlobal") + " &3" + booster.getMultiplier() + "x &b" + booster.getUniqueName() + " &e(" + (booster.isInfinite() ? "Infinite" : booster.formatTime() + "m") + ")"));
-        });
-    }
+        List<Booster> boostersForPlayer = boosterManager.getBoostersForPlayer(player.getName());
+        List<String> message = List.of("&7Actualmente tienes&f: &e%amount% &7boosters.",
+                "&7Boosters disponibles:&f",
+                "%boosters%"
+        );
 
+        MessageBuilder builder = messageHandler.buildManual(player, message)
+                .placeholder("%amount%", boostersForPlayer.size());
+
+        StringJoiner joiner = new StringJoiner("\n");
+        boostersForPlayer.forEach(booster -> {
+            String typeTag = booster.isPrivate() ? "&6&l[Privado]" : "&9&l[Global]";
+            String timeStr = boosterManager.formattedRemainingTime(booster);
+            joiner.add(typeTag + " &3" + booster.getMultiplier() + "x &b" + boosterManager.getUniqueName(booster) + " &e(" + timeStr + ")");
+        });
+
+        builder.placeholder("%boosters%", joiner.toString());
+        builder.send();
+    }
 }

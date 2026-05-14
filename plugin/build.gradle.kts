@@ -10,13 +10,15 @@ plugins {
 }
 
 dependencies {
+    compileOnly(libs.me.clip.placeholderapi)
     compileOnly(libs.org.spigotmc.spigot.api)
     compileOnly(libs.com.github.milkbowl.vaultapi)
+    compileOnly(libs.net.kyori.adventure.minimessage)
 
     implementation(libs.dev.dejvokep.boostedyaml)
     implementation(libs.dev.triumphteam.triumphgui)
+    implementation(libs.net.kyori.adventure.serializer)
     implementation(libs.dev.rollczi.litecommands.bukkit)
-    implementation(libs.com.github.thebusybiscuit.cs.corelib2)
 
     // Dependencias transitivas weonas.
     configurations.all {
@@ -27,7 +29,7 @@ dependencies {
 }
 
 group = "me.mrCookieSlime"
-version = "2.3.5"
+version = "3.0.0"
 description = "quicksell"
 
 
@@ -57,7 +59,7 @@ tasks {
     }
 
     shadowJar {
-        relocate ("net.kyori", "me.mrCookieSlime.QuickSell.libs.kyori")
+        //relocate ("net.kyori", "me.mrCookieSlime.QuickSell.libs.kyori")
         relocate ("dev.triumphteam", "me.mrCookieSlime.QuickSell.libs.gui")
         relocate ("dev.rollczi", "me.mrCookieSlime.QuickSell.libs.commands")
         relocate ("dev.dejvokep", "me.mrCookieSlime.QuickSell.libs.boostedyaml")

@@ -1,0 +1,10 @@
+id: example
+name: "<green>Example"
+priority: 1
+material: CHEST
+permission: quicksell.shop.example
+
+inheritance: []
+price:
+  STONE: 1.0
+  REDSTONE: 2.0

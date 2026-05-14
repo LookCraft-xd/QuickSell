@@ -1,190 +1,102 @@
 package me.mrCookieSlime.QuickSell.shop;
 
-import dev.triumphteam.gui.builder.item.ItemBuilder;
-import me.mrCookieSlime.QuickSell.QuickSell;
-import me.mrCookieSlime.QuickSell.utils.maths.DoubleHandler;
-import net.kyori.adventure.text.Component;
+import dev.dejvokep.boostedyaml.block.implementation.Section;
 import org.bukkit.Material;
 import org.bukkit.inventory.ItemStack;
 
 import java.util.*;
-import java.util.logging.Level;
 
 public class PriceInfo {
 
-    Shop shop;
-    Map<String, Double> prices;
-    Map<String, ItemStack> info;
-    List<String> order;
-    int amount;
+    private final Map<String, Double> localPrices = new HashMap<>();
+    private final Map<String, Double> consolidatedPrices = new HashMap<>();
 
-    private static final Map<String, PriceInfo> map = new HashMap<String, PriceInfo>();
+    // It just exists shrug
+    public PriceInfo() {
+        this.localPrices.put("STONE", 1.0);
+        sync();
+    }
 
-    public PriceInfo(Shop shop) {
-        this.shop = shop;
-        this.prices = new HashMap<String, Double>();
-        this.order = new ArrayList<String>();
-        this.amount = QuickSell.cfg.getInt("shops." + shop.getID() + ".amount");
+    public PriceInfo(Section section) {
+        if (section == null || section.isEmpty(false)) {
+            this.localPrices.put("STONE", 1.0);
+        } else {
+            section.getStringRouteMappedValues(false).forEach((key, value) -> {
+                try {
+                    double price = Double.parseDouble(value.toString());
+                    if (price > 0) localPrices.put(key.toUpperCase(), price);
+                } catch (NumberFormatException ignored) {
+                }
+            });
+        }
+        sync();
+    }
 
-        QuickSell.cfg.getConfiguration().getConfigurationSection("shops." + shop.getID() + ".price").getKeys(false).forEach(key -> {
-            if (!prices.containsKey(key) && QuickSell.cfg.getDouble("shops." + shop.getID() + ".price." + key) > 0.0)
-                prices.put(key, QuickSell.cfg.getDouble("shops." + shop.getID() + ".price." + key) / amount);
-        });
+    public void sync() {
+        consolidatedPrices.clear();
+        consolidatedPrices.putAll(localPrices);
+    }
 
-        QuickSell.cfg.getConfiguration().getConfigurationSection("shops." + shop.getID() + ".price").getKeys(false).forEach(key -> {
-            if (!prices.containsKey(key) && QuickSell.cfg.getDouble("shops." + shop.getID() + ".price." + key) > 0.0)
-                prices.put(key, QuickSell.cfg.getDouble("shops." + shop.getID() + ".price." + key) / amount);
-        });
+    public void mergePrices(PriceInfo parentInfo) {
+        parentInfo.getConsolidatedPrices().forEach(consolidatedPrices::putIfAbsent);
+    }
 
-        QuickSell.cfg.getStringList("shops." + shop.getID() + ".inheritance").forEach(this::loadParent);
+    public double getPrice(ItemStack item) {
+        if (item == null || item.getType() == Material.AIR) return 0.0;
 
-        info = new HashMap<String, ItemStack>();
-        for (String item : prices.keySet()) {
+        String key = item.getType().name();
 
-            // "Normal" item
-            if (Material.getMaterial(item) != null) {
-                info.put(item, ItemBuilder.from(Material.getMaterial(item))
-                        .name(Component.text(item))
-                        .addLore("&7Worth (1): &6" + DoubleHandler.getFancyDouble(prices.get(item)))
-                        .addLore("&7Worth (64): &6" + DoubleHandler.getFancyDouble(prices.get(item) * 64))
-                        .build()
-                );
-                order.add(item);
-                continue;
+        // Soporte para Items con nombre personalizado
+        if (item.hasItemMeta() && item.getItemMeta().hasDisplayName()) {
+            String customKey = key + "-" + item.getItemMeta().getDisplayName();
+            if (consolidatedPrices.containsKey(customKey)) {
+                return consolidatedPrices.get(customKey) * item.getAmount();
             }
-
-            QuickSell.log(Level.WARNING, "Could not recognize Item String: \" + item + \"");
         }
 
-        map.put(shop.getID(), this);
+        return consolidatedPrices.getOrDefault(key, 0.0) * item.getAmount();
     }
 
-    private void loadParent(String parent) {
-        QuickSell.cfg.getKeys("shops." + parent + ".price").forEach(key -> {
-            if (!prices.containsKey(key) && QuickSell.cfg.getDouble("shops." + parent + ".price." + key) > 0.0)
-                prices.put(key, QuickSell.cfg.getDouble("shops." + parent + ".price." + key) / amount);
-        });
-
-        QuickSell.cfg.getStringList("shops." + parent + ".inheritance").forEach(this::loadParent);
+    public Map<String, Object> serialize() {
+        return new LinkedHashMap<>(localPrices);
     }
 
-    public PriceInfo(String shop) {
-        this.prices = new HashMap<String, Double>();
-
-        QuickSell.cfg.getConfiguration().getConfigurationSection("shops." + shop + ".price").getKeys(false).forEach(key -> {
-            if (!prices.containsKey(key) && QuickSell.cfg.getDouble("shops." + shop + ".price." + key) > 0.0)
-                prices.put(key, QuickSell.cfg.getDouble("shops." + shop + ".price." + key) / amount);
-        });
-
-        QuickSell.cfg.getStringList("shops." + shop + ".inheritance").forEach(parent -> getInfo(parent).getPrices().keySet().forEach(key -> {
-            if (!prices.containsKey(key) && QuickSell.cfg.getDouble("shops." + parent + ".price." + key) > 0.0)
-                prices.put(key, QuickSell.cfg.getDouble("shops." + parent + ".price." + key) / amount);
-        }));
+    public Map<String, Double> getConsolidatedPrices() {
+        return Collections.unmodifiableMap(consolidatedPrices);
     }
 
     /**
-     * Gets the prices of a shop
-     *
-     * @return Map<String, Double>
+     * Añade o actualiza un precio en el mapa local.
      */
-    public Map<String, Double> getPrices() {
-        return prices;
+    public void setPrice(String key, double price) {
+        this.localPrices.put(key, price);
     }
 
     /**
-     * Gets the price of an item
-     *
-     * @param item ItemStack
-     * @return Double
+     * Elimina un ítem del mapa local.
      */
-    public double getPrice(ItemStack item) {
-        if (item == null)
-            return 0.0;
-
-        String string = toString(item);
-        if (prices.containsKey(string))
-            return DoubleHandler.fixDouble(prices.get(string) * item.getAmount());
-
-        return 0.0D;
+    public void removePrice(String key) {
+        this.localPrices.remove(key);
     }
 
     /**
-     * Gets the price of an item
-     *
-     * @param string String
-     * @return Double
+     * Obtiene todas las llaves (IDs de materiales/ítems) definidos
+     * ÚNICAMENTE en esta tienda, ignorando herencias.
+     * Útil para el editor, para no mostrar ítems repetidos de padres.
      */
-    public double getPrice(String string) {
-        return prices.get(string);
+    public Set<String> getLocalItems() {
+        return this.localPrices.keySet();
+    }
+
+    public Map<String, Double> getLocalPrices() {
+        return Collections.unmodifiableMap(localPrices);
     }
 
     /**
-     * Converts an ItemStack into a string
-     *
-     * @param item ItemStack
-     * @return String
+     * Verifica si un ítem existe localmente.
      */
-    public String toString(ItemStack item) {
-        if (item == null) return "null";
-        String name = item.hasItemMeta() ? item.getItemMeta().hasDisplayName() ? item.getItemMeta().getDisplayName().replace("&", "&") : "" : "";
-
-        if (!name.equalsIgnoreCase("") && prices.containsKey(item.getType().toString() + "-" + name))
-            return item.getType().toString() + "-" + name;
-
-        if (item.isSimilar(new ItemStack(item.getType(), item.getAmount())) && prices.containsKey(item.getType().toString() + "-nodata"))
-            return item.getType().toString() + "-nodata";
-
-        if (prices.containsKey(item.getType().toString()))
-            return item.getType().toString();
-
-        return "null";
+    public boolean hasLocalItem(String key) {
+        return this.localPrices.containsKey(key);
     }
 
-    /**
-     * Gets the price information from a shop
-     *
-     * @param shop String
-     * @return PriceInfo
-     */
-    public static PriceInfo getInfo(String shop) {
-        return map.containsKey(shop) ? map.get(shop) : new PriceInfo(shop);
-    }
-
-    /**
-     * Gets the amount
-     *
-     * @return Integer
-     */
-    public int getAmount() {
-        return amount;
-    }
-
-    /**
-     * Gets all the shop items
-     *
-     * @return Collection<ItemStack>
-     */
-    // todo: rename method into a more suitable one
-    public Collection<ItemStack> getInfo() {
-        return info.values();
-    }
-
-    /**
-     * Gets the shop items
-     *
-     * @return List<String>
-     */
-    public List<String> getItems() {
-        return this.order;
-    }
-
-    /**
-     * Gets a shop item from string
-     *
-     * @param string String
-     * @return ItemStack
-     */
-    public ItemStack getItem(String string) {
-        return this.info.get(string);
-    }
 }

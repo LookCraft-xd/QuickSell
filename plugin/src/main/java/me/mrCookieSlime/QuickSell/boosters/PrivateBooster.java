@@ -1,32 +1,25 @@
 package me.mrCookieSlime.QuickSell.boosters;
 
-import java.text.ParseException;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.List;
+import java.util.Map;
+import java.util.UUID;
 
 public class PrivateBooster extends Booster {
 
-	public PrivateBooster(String owner, double multiplier, int minutes) {
-		super(owner, multiplier, minutes);
-	}
-	
-	public PrivateBooster(BoosterType type, String owner, double multiplier, int minutes) {
-		super(type, owner, multiplier, minutes);
-	}
-	
-	public PrivateBooster(int id) throws ParseException {
-		super(id);
-	}
+    public PrivateBooster(BoosterType type, String time, double multiplier, String owner) {
+        super(UUID.randomUUID().toString(), type, time, multiplier, owner);
+    }
 
-	@Override
-	public List<String> getAppliedPlayers() {
-		return Collections.singletonList(owner);
-	}
-	
-	@Override
-	public String getMessage() {
-		return "messages.pbooster-use." + type.toString();
-	}
+    public PrivateBooster(Map<String, Object> map) {
+        super(map);
+    }
 
+    @Override
+    public boolean isPrivate() {
+        return true;
+    }
+
+    @Override
+    public String getMessage() {
+        return "messages.pbooster-use." + getType().toString();
+    }
 }
