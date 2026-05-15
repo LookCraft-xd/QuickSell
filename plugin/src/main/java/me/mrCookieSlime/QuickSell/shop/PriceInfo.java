@@ -44,17 +44,7 @@ public class PriceInfo {
     public double getPrice(ItemStack item) {
         if (item == null || item.getType() == Material.AIR) return 0.0;
 
-        String key = item.getType().name();
-
-        // Soporte para Items con nombre personalizado
-        if (item.hasItemMeta() && item.getItemMeta().hasDisplayName()) {
-            String customKey = key + "-" + item.getItemMeta().getDisplayName();
-            if (consolidatedPrices.containsKey(customKey)) {
-                return consolidatedPrices.get(customKey) * item.getAmount();
-            }
-        }
-
-        return consolidatedPrices.getOrDefault(key, 0.0) * item.getAmount();
+        return consolidatedPrices.getOrDefault(item.getType().name(), 0.0);
     }
 
     public Map<String, Object> serialize() {

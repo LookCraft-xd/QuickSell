@@ -14,9 +14,4 @@ subprojects {
         maven("https://hub.spigotmc.org/nexus/content/repositories/snapshots/")
         maven("https://repo.extendedclip.com/content/repositories/placeholderapi/")
     }
-
-    group = "me.mrCookieSlime"
-    version = "2.3.5"
-    description = "quicksell"
-
 }
